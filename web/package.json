@@ -1,0 +1,47 @@
+{
+  "name": "sousvoice-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test:a11y": "node test-a11y.js",
+    "test:interaction": "tsx test-interaction.js"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "framer-motion": "^11.18.2",
+    "livekit-client": "^2.22.3",
+    "lucide-react": "^0.469.0",
+    "motion-dom": "^13.2.0",
+    "motion-utils": "^13.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "symbol-tree": "^3.2.4",
+    "ts-interface-checker": "^1.0.2",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@typescript-eslint/eslint-plugin": "^8.70.0",
+    "@typescript-eslint/parser": "^8.70.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.5.5",
+    "axe-core": "^4.13.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "globals": "^14.0.0",
+    "jsdom": "^30.0.1",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^3.4.19",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.3"
+  }
+}

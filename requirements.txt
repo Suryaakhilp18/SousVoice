@@ -1,0 +1,15 @@
+# Live agent path (needs API keys -- see .env.example). The offline
+# interruption/recovery test suite (tests/test_interruption.py) requires
+# NONE of this; it runs on stdlib asyncio + unittest only.
+
+livekit-agents>=0.12.0
+livekit-plugins-rime>=0.1.0
+livekit-plugins-deepgram>=0.6.0
+livekit-plugins-openai>=0.9.0
+livekit-plugins-silero>=0.6.0
+python-dotenv>=1.0.0
+
+# Token server for connecting a frontend (e.g. LiveKit Agents Playground)
+# to the running agent.
+livekit-api>=0.7.0
+flask>=3.0.0

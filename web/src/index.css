@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Premium Navy Design System */
+:root {
+  --bg-base: #0a0f1d;
+  --bg-surface: #111a2e;
+  --bg-surface-elevated: #18243e;
+  --bg-surface-active: #1f3052;
+  --border-subtle: #233554;
+  --border-strong: #38517b;
+  --color-amber: #38bdf8; /* Primary light blue accent */
+  --color-amber-glow: rgba(56, 189, 248, 0.28);
+  --color-cyan: #22d3ee;
+  --color-terracotta: #60a5fa; /* Secondary soft blue */
+  --color-crimson: #f43f5e;
+  --color-emerald: #10b981;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+}
+
+[data-theme='light'] {
+  --bg-base: #f0f4f8;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #e2e8f0;
+  --bg-surface-active: #cbd5e1;
+  --border-subtle: #cbd5e1;
+  --border-strong: #94a3b8;
+  --color-amber: #0284c7;
+  --color-amber-glow: rgba(2, 132, 199, 0.2);
+  --color-cyan: #0891b2;
+  --color-terracotta: #2563eb;
+  --color-crimson: #e11d48;
+  --color-emerald: #059669;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
