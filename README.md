@@ -1,172 +1,316 @@
-﻿# SousVoice — Real-Time Hands-Free AI Kitchen Companion 🍳🎙️
+﻿# 🍳 SousVoice
+### AI-Powered Voice Kitchen Companion
 
-> **Turn any recipe into an interactive, voice-guided cooking assistant with instant hands-free interruption and recovery.**
-
-SousVoice is a voice-native AI kitchen assistant designed for cooks with flour, butter, or oil on their hands. It guides users step-by-step through any culinary dish, answers contextual questions about ingredient substitutions, stove heat settings, and quantities, and allows natural speech interruptions (**barge-in**) that instantly cancel speech and handle follow-up questions without stale responses.
-
----
-
-## 🌟 The Core Problem & The Innovation
-
-When someone is actively cooking, **touching a screen is impractical or unsanitary**. Voice assistants typically fail in kitchen environments because:
-1. **No Barge-In / Stale Speech**: Traditional assistants force the cook to listen to long, rigid sentences. Saying *"Wait!"* or *"How much salt again?"* either gets ignored or queued after the previous response finishes.
-2. **Acoustic Echo & False Triggers**: Kitchen background clatter, exhaust fan hum, and the assistant's own voice coming through device speakers cause endless recognition loops and hallucinated answers.
-3. **Loss of Cooking Context**: If the cook asks *"Can I use an induction stove for this step?"*, generic bots lose track of the specific pan temperature, current step, and ingredient state.
-
-### The One-Sentence Claim:
-> **When the cook interrupts—even mid-speech or during a tool-assisted query—queued audio cuts off in sub-milliseconds, stale response pipelines are discarded via generation fencing, and the cook's new question is answered with full situational awareness.**
+> **A voice-native AI cooking companion that guides you step-by-step through any recipe, answers contextual culinary questions in real time, and allows instant hands-free interruption (barge-in) without stale audio.**
 
 ---
 
-## 🏗️ Architecture & Voice Pipeline
+## 🚀 Live Demo
+
+[**Launch SousVoice → https://sousvoice.vercel.app/**](https://sousvoice.vercel.app/)
+
+*Experience real-time, hands-free cooking assistance directly in your browser with zero setup required.*
+
+**GitHub Repository**: [https://github.com/Suryaakhilp18/SousVoice](https://github.com/Suryaakhilp18/SousVoice)
+
+---
+
+## ✨ Why SousVoice?
+
+Cooking is a messy, high-cognitive-load physical task. Your hands are covered in flour, oil, or water; timers are ticking, oil is heating, and your attention is divided. 
+
+Traditional recipe websites and generic chatbot assistants fail in the kitchen:
+- **Screen Dependency**: Unlocking your phone or scrolling a recipe with wet, sticky hands stains devices and interrupts cooking.
+- **The Interruption Problem**: If an assistant begins reading a paragraph-long instruction and you quickly need to ask, *"Wait, how much salt?"*, standard chatbots force you to wait for speech to finish or queue your query after the old response.
+- **Acoustic Echo & Clatter**: Splattering oil, running taps, exhaust hoods, and the device speaker's own audio create acoustic feedback loops that confuse speech recognition.
+- **Loss of Situational Context**: Asking *"Can I use an induction stove for this?"* requires understanding the *active cooking step*, temperature profile, and ingredient states—not just a generic web search.
+
+**SousVoice solves this** by pairing hands-free, continuous conversational speech with **sub-millisecond generation-fenced interruption recovery**, keeping you focused on the stove.
+
+---
+
+## 🎯 What It Does
+
+- **Dynamic Recipe Ingestion**: Paste any URL from major recipe sites or YouTube, or launch one-click culinary standards (*Hyderabadi Chicken Dum Biryani*, *Paneer Butter Masala*, *Creamy Garlic Penne Pasta*, *Masala Dosa*, *Shoyu Ramen*).
+- **Synchronized Step-by-Step Guidance**: Tracks active step, completed milestones, and calculated progress percentages in lockstep.
+- **Real-Time Hands-Free Voice Control**: Speak step advancements (*"Next step"*, *"Done"*, *"Go to step 4"*) without touching the screen.
+- **Sub-Millisecond Barge-In / Interruption**: Saying *"Wait"*, *"Stop"*, or asking an urgent question instantly cuts off active audio output and answers your new question.
+- **Acoustic Feedback & Echo Cancellation**: Prevents the assistant from hearing its own voice through device speakers, filtering out false triggers and ambient kitchen noise.
+- **Persistent Chat Transcript**: Keeps complete multi-turn conversation history accessible with independent scrollback and a floating *"Jump to latest"* shortcut.
+- **FIFO Question Queue**: Gracefully handles back-to-back rapid inquiries in sequential order without dropping cooking state.
+- **Context-Aware Culinary Intelligence**: Answers substitutions (*"Can I swap heavy cream for Greek yogurt?"*), heat levels, and timing based on the current recipe and active step.
+- **Zero-Barrier Fallback**: Dual-architecture support—runs directly in the browser via speech synthesis and recognition, or connects to the Python LiveKit voice agent.
+
+---
+
+## 🧑‍🍳 How It Works
 
 ```
-  ┌─────────────────────────────────────────────────────────────┐
-  │                        COOK'S MIC                           │
-  └──────────────────────────────┬──────────────────────────────┘
-                                 │
-                  [Acoustic Echo Cancellation]
-                  [VAD & Noise Clatter Filter]
-                                 │
-                                 ▼
-                    ┌──────────────────────────┐
-                    │    SpeechRecognition     │
-                    │ (Interim & Final Stream) │
-                    └────────────┬─────────────┘
-                                 │
-                   [Generation-Fenced Interruption]
-                   [Barge-In / Explicit 'Wait/Stop']
-                                 │
-                                 ▼
-                    ┌──────────────────────────┐
-                    │    SousVoice Brain       │
-                    │ (Current Step + Recipe)  │
-                    │ (OpenAI GPT-4o-mini/Off) │
-                    └────────────┬─────────────┘
-                                 │
-                                 ▼
-                    ┌──────────────────────────┐
-                    │       Speech Queue       │
-                    │  (Rime TTS Audio Output) │
-                    └──────────────────────────┘
+ 1. LOAD RECIPE          Paste any recipe link or select a preset dish
+       │
+       ▼
+ 2. RECIPE NORMALIZATION Prep time, servings, ingredients, and steps extracted
+       │
+       ▼
+ 3. START COOKING        Session initializes, microphone opens, Step 1 read aloud
+       │
+       ▼
+ 4. HANDS-FREE GUIDANCE  SousVoice tracks active step & listens for inquiries
+       │
+ ┌─────┴─────────────────────────────────────────────────────────────┐
+ │                                                                   │
+ ▼                                                                   ▼
+[Step Command: "Next step"]                      [Contextual Query: "How much salt?"]
+ Advance step, update progress,                   Retrieve recipe + current step context,
+ speak step 2 instruction                        synthesize spoken answer
+ │                                                                   │
+ └──────────────────────────────┬────────────────────────────────────┘
+                                │
+                  [User Interrupts Mid-Speech: "Wait!"]
+                                │
+                                ▼
+ 5. BARGE-IN FENCING     Monotonic generation ID bumped; audio cancelled immediately;
+                         stale response pipelines discarded
+                                │
+                                ▼
+ 6. RECOVERY ANSWER      Cook's new inquiry answered with full situational memory
+                                │
+                                ▼
+ 7. COMPLETE SESSION     Session summary generated with active duration, turns, & barge-ins
 ```
 
-- **Generation-Fenced Turn Controller (`TurnController`)**: Every conversational turn receives a strictly monotonic generation ID (`currentGen++`). Any interruption immediately invalidates the current generation. Even if an async lookup completes right as an interruption occurs, stale audio is never synthesized or spoken out loud.
-- **Hands-Free Speech Filter (`speechService.ts`)**: Rejects device speaker self-echo, throat-clearing, and background kitchen noise, while instantly recognizing quick directional commands (`"next"`, `"wait"`, `"stop"`, `"done"`, `"repeat"`).
-- **Persistent Conversation Transcript (`LiveTranscript.tsx`)**: Retains every turn, step jump, and interrupted query with sticky bottom scrolling and an intuitive `Jump to latest` floating indicator when inspecting past ingredients.
-- **Unconstrained Voice Command Center (`VoiceOrbVisualizer.tsx`)**: Dedicated `220px+` vertical presence featuring an animated 7-bar audio visualizer, expanding ripple halos, and live state indicators across all 5 operational modes.
+---
+
+## 🎙️ Voice & Interruption Experience
+
+### Generation-Fenced Turn Controller
+The central engineering challenge of real-time voice in conversational AI is **state invalidation**. If a user interrupts while an assistant is speaking or while an AI lookup is in flight, standard async pipelines will complete the old request and speak stale audio over the user's new question.
+
+SousVoice implements a strict **monotonically increasing generation counter** (`TurnController`):
+1. When the assistant starts speaking or triggers a lookup, it tags the task with `currentGen`.
+2. When the user interrupts (via keyword or VAD barge-in), `currentGen` is immediately incremented (`gen++`), active audio is aborted, and all pending timeouts are cleared.
+3. When any asynchronous operation resolves, it checks `if (taskGen === currentGen)`. Stale operations are discarded silently, guaranteeing that **only the cook's latest intent is ever voiced**.
+
+### Voice Command Center States
+The UI features a dedicated, unclipped **Voice Command Center (`VoiceOrbVisualizer`)** with distinct real-time states:
+- **`Listening` / `Voice Ready`**: Green emerald aura with active microphone monitoring.
+- **`Hearing You...`**: Amber halo responding to live mic levels while the cook speaks.
+- **`Thinking...`**: Dashed amber spinner indicating prompt resolution.
+- **`Speaking (Rime TTS)`**: Glowing terracotta hero banner with 7 live bouncing waveform frequency bars and concentric soundwave rings.
+- **`Interrupted!`**: Crimson alert badge signaling that stale speech was successfully fenced.
 
 ---
 
-## 📱 User Journey & Key Features
+## 🏗️ System Architecture
 
-1. **Load Any Recipe or URL**: Paste links from YouTube, Allrecipes, food blogs, or choose pre-extracted culinary dishes (Hyderabadi Chicken Dum Biryani, Paneer Butter Masala, Creamy Garlic Penne Pasta, Masala Dosa, Shoyu Ramen).
-2. **Recipe Overview & Context**: Automatically extracts prep time, servings, ingredients, and sequential steps.
-3. **One-Click Start**: Tap **"Start Cooking"** to immediately initialize the session, microphone, and step 1 instructions.
-4. **Hands-Free Interaction**:
-   - Spoken step advancement: *"Next step"*, *"Done"*, *"Go to step 4"*.
-   - Contextual queries: *"Can I replace butter with olive oil?"*, *"What temperature for induction?"*.
-5. **Instant Barge-In Interruption**:
-   - Say *"Wait, how much salt?"* or *"Stop!"* while SousVoice is speaking.
-   - Speech stops immediately, the interrupted message is marked in the transcript, and the recovery answer is provided immediately.
-6. **FIFO Question Queue**: If two rapid inquiries occur, they are queued and answered in sequence without dropping context.
+```
+                      ┌─────────────────────────────────┐
+                      │        COOK'S HARDWARE          │
+                      │  (Microphone & Device Speaker)  │
+                      └────────────────┬────────────────┘
+                                       │
+                      ┌────────────────┴────────────────┐
+                      │    SousVoice Web Client (Vite)  │
+                      │   https://sousvoice.vercel.app  │
+                      └────────────────┬────────────────┘
+                                       │
+            ┌──────────────────────────┴──────────────────────────┐
+            │                                                     │
+            ▼ (Client-Side Real-Time Path)                        ▼ (Server Agent Path)
+┌──────────────────────────────────────┐              ┌─────────────────────────┐
+│     Client Speech & AI Engine        │              │   Flask Token Server    │
+│  - Web Speech API (STT & TTS)        │              │  (scripts/token_server) │
+│  - Echo Cancellation & VAD Filter    │              └────────────┬────────────┘
+│  - In-Browser Generation Fencing     │                           │
+│  - OpenAI GPT-4o-mini / Culinary AI  │                           ▼
+└──────────────────────────────────────┘              ┌─────────────────────────┐
+                                                      │  LiveKit WebRTC Cloud   │
+                                                      └────────────┬────────────┘
+                                                                   │
+                                                      ┌────────────┴────────────┐
+                                                      ▼                         ▼
+                                             ┌─────────────────┐       ┌────────────────┐
+                                             │ Deepgram (STT)  │       │   Rime (TTS)   │
+                                             │     nova-3      │       │     mistv2     │
+                                             └────────┬────────┘       └────────────────┘
+                                                      │
+                                                      ▼
+                                             ┌─────────────────┐
+                                             │  OpenAI (LLM)   │
+                                             │   gpt-4o-mini   │
+                                             └─────────────────┘
+```
 
 ---
 
-## 🚀 Quick Start & Local Setup
+## 🧩 Technology Stack
 
-### Prerequisites
-- Node.js (v18+)
-- npm or yarn
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Frontend Framework** | React 18, TypeScript, Vite | Snappy single-page application with high-performance rendering |
+| **State Management** | Zustand | Centralized reactive store for cooking session, transcript, and voice state |
+| **Styling & UI** | Tailwind CSS, Framer Motion | Smooth layout animations, fluid waveform visuals, and dark/light kitchen themes |
+| **Accessibility** | Axe-Core, WCAG 2.1 AA | 100/100 accessibility audit score across 25 verified rules |
+| **Browser Voice** | Web Speech API, Web Audio API | Client-side STT, TTS, volume level analyser, and echo cancellation |
+| **Cloud Agent** | LiveKit Agents Python SDK | Real-time WebRTC room orchestration and VAD turn management |
+| **Speech-to-Text (STT)** | Deepgram (`nova-3`) | Low-latency streaming speech recognition |
+| **Text-to-Speech (TTS)** | Rime AI (`mistv2`, speaker: `abbie`) | Natural, expressive streaming spoken culinary audio |
+| **LLM Orchestration** | OpenAI GPT-4o-mini | Cooking step understanding, ingredient substitution, and unit math |
+| **Hosting & CI/CD** | Vercel | Instant global deployment with automated build validation |
 
-### Installation
+---
+
+## 📁 Repository Structure
+
+```
+SousVoice/
+├── agent/                         # LiveKit Python Agent (Backend)
+│   ├── interruption.py            # TurnController generation-fencing core
+│   ├── tools.py                   # Substitution & quantity lookup tools
+│   ├── recipe_data.py             # Culinary dataset & fallback tables
+│   └── main.py                    # LiveKit agent entrypoint (Deepgram + OpenAI + Rime)
+├── scripts/
+│   └── token_server.py            # Flask token server for LiveKit room minting
+├── tests/
+│   └── test_interruption.py       # Offline Python unit tests for turn fencing
+├── web/                           # Production Web Client (React + TypeScript)
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── HomeLanding.tsx            # URL extractor & preset dish selector
+│   │   │   ├── PreConnectScreen.tsx       # Recipe summary & Start Cooking CTA
+│   │   │   ├── LiveSessionScreen.tsx      # Dual-column responsive workspace
+│   │   │   ├── VoiceOrbVisualizer.tsx     # 220px+ Voice Command Center & waveforms
+│   │   │   ├── LiveTranscript.tsx         # Scrollable chat history with jump affordance
+│   │   │   ├── RecipeContextPanel.tsx     # Dish details & ingredient breakdown
+│   │   │   ├── RecipeProgressRail.tsx     # Interactive step progress rail
+│   │   │   ├── KitchenControlBar.tsx      # Mic toggle, end cooking, quick inquiry chips
+│   │   │   ├── SessionStatsBadge.tsx      # Realtime duration, turns, and barge-in counters
+│   │   │   └── SettingsModal.tsx          # Display theme & AI enhancement settings
+│   │   ├── services/
+│   │   │   ├── cookingAiService.ts        # Contextual AI prompting & fallback engine
+│   │   │   ├── mockSession.ts             # Client-side session & turn engine
+│   │   │   ├── recipeExtractor.ts         # Schema.org JSON-LD & YouTube recipe scraper
+│   │   │   └── speechService.ts           # Hands-free mic, echo cancellation, TTS
+│   │   ├── store/
+│   │   │   └── useSousVoiceStore.ts       # Central Zustand state store
+│   │   └── App.tsx                        # Main shell & modal manager
+│   ├── test-a11y.js                       # Headless axe-core accessibility audit
+│   ├── test-interaction.js                # Headless 12-step interaction & barge-in test
+│   └── package.json
+├── requirements.txt               # Python backend dependencies
+└── README.md                      # Project documentation
+```
+
+---
+
+## ⚙️ Local Development Setup
+
+### 1. Web Application (Client)
+
+The web frontend operates completely standalone in browser mode with full voice interaction:
 
 ```bash
-# Navigate to the web frontend directory
-cd web
+# Clone repository
+git clone https://github.com/Suryaakhilp18/SousVoice.git
+cd SousVoice/web
 
 # Install dependencies
 npm install
 
-# Start the Vite development server
+# Start local development server
 npm run dev
 ```
 
-The application will be live at:
-👉 **`http://127.0.0.1:5174`** (or `http://localhost:5173`)
+Open your browser at **`http://localhost:5173`** (or `http://127.0.0.1:5174`).
 
-*(Optional)* To enhance the AI with open-ended conversational intelligence, open **Settings** (⚙️ top right) and enter an **OpenAI API Key** (`sk-...`). It will be saved securely and locally in your browser. If left blank, SousVoice runs on its built-in offline culinary intelligence engine.
+### 2. Optional: LiveKit Backend Agent
+
+To run the Python LiveKit agent with Deepgram and Rime:
+
+```bash
+# From project root
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# Configure environment variables
+cp .env.example .env
+# Edit .env with LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET, RIME_API_KEY, OPENAI_API_KEY, DEEPGRAM_API_KEY
+
+# Start token server
+python scripts/token_server.py
+
+# In a separate terminal, launch the agent worker
+python -m agent.main dev
+```
 
 ---
 
-## 🧪 Verification & Testing Suite
+## 🧪 Verification & Quality Assurance
 
-SousVoice comes with a 4-tier automated test suite:
+Every release runs through four strict verification gates:
 
 ```bash
-# 1. Type-check & Production Build
+cd web
+
+# 1. Type Check & Build
 npm run build
 
-# 2. Code Quality & Linter
+# 2. Code Quality & Linting
 npm run lint
 
-# 3. Automated Accessibility Audit (Axe-Core, 100/100 standard)
+# 3. Accessibility Compliance (Axe-Core, 100/100)
 npm run test:a11y
 
-# 4. End-to-End Headless Interaction & Barge-In Test Suite
+# 4. End-to-End Headless Interaction & Barge-In Suite
 npm run test:interaction
 ```
 
-### Verification Gate Results:
-- **`npm run build`**: ✅ TypeScript + Vite production bundle passed (0 errors).
-- **`npm run lint`**: ✅ ESLint passed (0 errors, 0 warnings).
-- **`npm run test:a11y`**: ✅ **100/100 score** across 25 WCAG/Axe rules with 0 violations.
-- **`npm run test:interaction`**: ✅ **12/12 steps passed** (Dynamic recipe extraction, Voice connection, Substitution Q&A, Induction queries, Barge-in interruption, FIFO queue, Step jumps, Session conclusion).
+### Verified Test Results
+- **TypeScript & Vite Build**: Passed (0 errors, 0 warnings).
+- **ESLint**: Passed cleanly.
+- **Accessibility**: **100/100** score across 25 rules (0 violations).
+- **Interactive Test Suite**: **12/12 steps verified**:
+  1. Initial home screen load
+  2. Dynamic recipe parsing (Biryani, Pasta, Ramen, Dosa, Paneer)
+  3. Session connection & Step 1 greeting
+  4. Ingredient substitution inquiry
+  5. Equipment setting inquiry (Induction heat)
+  6. Mid-speech barge-in interruption (`"Wait! How much salt again?"`)
+  7. Turn fencing & recovery answer generation
+  8. FIFO inquiry queue processing
+  9. Next-step advancement (`"Next step"`, `"Done."`)
+  10. Direct step jumps (`"Go to step four"`)
+  11. Session conclusion & performance metrics
+  12. YouTube URL extraction resilience
 
 ---
 
-## 📂 Project Structure
+## 🔒 Security & Privacy
 
-```
-DataForge/
-├── agent/                         # Python backend & LiveKit pipeline
-│   ├── interruption.py            # TurnController generation-fencing core
-│   ├── tools.py                   # Substitution & quantity lookup tools
-│   ├── recipe_data.py             # Culinary dataset & fallback tables
-│   └── main.py                    # LiveKit agent entrypoint
-├── scripts/
-│   └── token_server.py            # Token generation utility
-├── tests/
-│   └── test_interruption.py       # Offline Python unit tests for turn fencing
-└── web/                           # Primary React + TypeScript Frontend
-    ├── src/
-    │   ├── components/
-    │   │   ├── HomeLanding.tsx            # Recipe URL input & dish selector
-    │   │   ├── PreConnectScreen.tsx       # Recipe preview & start action
-    │   │   ├── LiveSessionScreen.tsx      # Dual-column cooking workspace
-    │   │   ├── VoiceOrbVisualizer.tsx     # 220px+ Voice Command Center
-    │   │   ├── LiveTranscript.tsx         # Scrollable chat history + jump affordance
-    │   │   ├── RecipeContextPanel.tsx     # Dish details & ingredient breakdown
-    │   │   ├── RecipeProgressRail.tsx     # Step progress rail & step buttons
-    │   │   ├── KitchenControlBar.tsx      # Mic mute, end session, suggestion chips
-    │   │   ├── SessionStatsBadge.tsx      # Realtime duration, turns, and barge-ins
-    │   │   └── SettingsModal.tsx          # Theme chooser & AI enhancement config
-    │   ├── services/
-    │   │   ├── cookingAiService.ts        # Culinary intelligence & contextual AI
-    │   │   ├── mockSession.ts             # Client-side session & turn engine
-    │   │   ├── recipeExtractor.ts         # URL parser & schema extractor
-    │   │   └── speechService.ts           # Hands-free mic, echo cancellation, TTS
-    │   ├── store/
-    │   │   └── useSousVoiceStore.ts       # Central Zustand state store
-    │   └── App.tsx                        # Root layout & route manager
-    └── package.json
-```
+- **No Server Audio Storage**: Voice streams are processed in memory and never permanently stored or recorded to disk.
+- **Local API Key Storage**: Optional user-provided OpenAI API keys are held exclusively in browser `localStorage` and sent directly to the AI provider—never routed to third-party tracking servers.
+- **Explicit Mic Teardown**: Ending a cooking session or navigating away instantly releases all `MediaStreamTrack` audio hardware and closes audio contexts, preventing background microphone listening.
 
 ---
 
-## 🏆 Hackathon Submission Highlights
+## 🔮 Roadmap & Future Improvements
 
-- **Voice-Native**: Designed specifically for hands-free kitchen environments.
-- **Zero-Barrier Evaluation**: No external Python servers, proxy keys, or complex setups required for judging—the interactive voice engine and speech synthesis operate directly in modern browsers out-of-the-box.
-- **Resilient AI**: Context-aware prompts preserve current cooking step, ingredient quantities, and past turns.
-- **Bulletproof Interruption**: Eliminates the latency and frustration of conversational overlap with sub-millisecond audio cancellation.
+- **Multilingual Cooking Guidance**: Real-time voice translation across Hindi, Spanish, Mandarin, and regional culinary dialects.
+- **Multimodal Computer Vision**: Integrating camera feeds to inspect doneness (e.g., *"Is this onion translucent yet?"*, *"Are these bubbles ready for dumpling folding?"*).
+- **Smart Timer Synthesis**: Automatic detection of temporal instructions (*"Simmer for 15 minutes"*) with voice-controlled concurrent kitchen timers.
+- **Hardware Foot Pedal Integration**: Bluetooth kitchen pedal support for commercial kitchen stations.
+
+---
+
+## 👥 Authors & Acknowledgments
+
+- **Lead Developer**: Surya Akhil P ([@Suryaakhilp18](https://github.com/Suryaakhilp18))
+- **LiveKit Agents**: Real-time WebRTC room transport & audio orchestration.
+- **Rime AI**: Natural, low-latency streaming speech synthesis.
+- **Deepgram**: Speech-to-text transcription engine.
+- **OpenAI**: Conversational reasoning and recipe context comprehension.
+
+---
+
+*Built with passion for home cooks, busy chefs, and seamless voice-native AI.*
