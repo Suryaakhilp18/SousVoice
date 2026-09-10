@@ -1,4 +1,4 @@
-﻿// speechService.ts: Enhanced Hands-Free Microphone, Multilingual Speech Recognition & Synthesis
+// speechService.ts: Enhanced Hands-Free Microphone, Multilingual Speech Recognition & Synthesis
 
 import type { SupportedLanguage } from './localization';
 
@@ -85,10 +85,17 @@ export const isEchoOfAssistant = (incomingText: string): boolean => {
 };
 
 /**
+ * Filter list of common noise words and filler syllables that browser STT emits on ambient kitchen noises
+ */
+const NOISE_FILLERS = new Set([
+  'yeah', 'yes', 'uh', 'um', 'ah', 'oh', 'ok', 'okay', 'so', 'the', 'a', 'an', 'and', 'or', 'to', 'in', 'it', 'is', 'at', 'by', 'of', 'for', 'huh', 'hmm', 'ha', 'hey'
+]);
+
+/**
  * Validate that speech contains genuine, intentional words rather than noise or single syllables.
  */
 const isMeaningfulSpeech = (text: string): boolean => {
-  const clean = text.trim();
+  const clean = text.trim().toLowerCase();
   if (!clean || clean.length < 3) return false;
 
   // Quick commands in all supported languages
@@ -97,10 +104,24 @@ const isMeaningfulSpeech = (text: string): boolean => {
     'रुको', 'अगला', 'आगे', 'हो गया', 'रुकिए',
     'ఆగు', 'ఆగండి', 'తరువాత', 'పూర్తయింది'
   ];
-  if (quickCommands.includes(clean.toLowerCase())) return true;
+  if (quickCommands.includes(clean)) return true;
 
+  // Split into tokens
   const words = clean.split(/\s+/).filter((w) => w.length >= 1);
-  return words.length >= 2 || (words.length >= 1 && clean.length >= 6);
+  if (words.length === 0) return false;
+
+  // If it's only a single filler word or sound, reject
+  if (words.length === 1 && NOISE_FILLERS.has(words[0])) {
+    return false;
+  }
+
+  // If all words are just filler syllables, reject
+  if (words.every((w) => NOISE_FILLERS.has(w))) {
+    return false;
+  }
+
+  // Must have at least 2 distinct words OR be a recognized multi-syllable word (>=6 chars) not in filler list
+  return words.length >= 2 || (words.length === 1 && clean.length >= 6);
 };
 
 export const speakText = (
@@ -239,20 +260,25 @@ export const startMicrophone = async (
             interimTranscriptAccumulator = trimmedInterim;
             onSpeechInterim(trimmedInterim);
 
+            // Only consider interim fallback if the user has spoken at least 3 substantive words
+            // and paused for 2.2 seconds (allowing the user to finish their thought without cut-off)
             if (!isSpeakingOutLoud() && isMeaningfulSpeech(trimmedInterim)) {
-              if (silenceTimer) clearTimeout(silenceTimer);
-              silenceTimer = setTimeout(() => {
-                const toEmit = interimTranscriptAccumulator.trim();
-                interimTranscriptAccumulator = '';
-                if (isMeaningfulSpeech(toEmit) && !isEchoOfAssistant(toEmit)) {
-                  const now = Date.now();
-                  if (toEmit.toLowerCase() !== lastEmittedCleanText || now - lastEmittedTime > 2000) {
-                    lastEmittedCleanText = toEmit.toLowerCase();
-                    lastEmittedTime = now;
-                    onSpeechRecognized(toEmit);
+              const wordCount = trimmedInterim.split(/\s+/).length;
+              if (wordCount >= 3) {
+                if (silenceTimer) clearTimeout(silenceTimer);
+                silenceTimer = setTimeout(() => {
+                  const toEmit = interimTranscriptAccumulator.trim();
+                  interimTranscriptAccumulator = '';
+                  if (isMeaningfulSpeech(toEmit) && !isEchoOfAssistant(toEmit)) {
+                    const now = Date.now();
+                    if (toEmit.toLowerCase() !== lastEmittedCleanText || now - lastEmittedTime > 2500) {
+                      lastEmittedCleanText = toEmit.toLowerCase();
+                      lastEmittedTime = now;
+                      onSpeechRecognized(toEmit);
+                    }
                   }
-                }
-              }, 1400);
+                }, 2200);
+              }
             }
           }
         }
@@ -264,7 +290,7 @@ export const startMicrophone = async (
 
           if (!isEchoOfAssistant(trimmedFinal) && isMeaningfulSpeech(trimmedFinal)) {
             const now = Date.now();
-            if (trimmedFinal.toLowerCase() !== lastEmittedCleanText || now - lastEmittedTime > 1500) {
+            if (trimmedFinal.toLowerCase() !== lastEmittedCleanText || now - lastEmittedTime > 1200) {
               lastEmittedCleanText = trimmedFinal.toLowerCase();
               lastEmittedTime = now;
               onSpeechRecognized(trimmedFinal);

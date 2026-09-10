@@ -695,28 +695,38 @@ function generateLocalContextualAnswer(
   }
 
   // 11. INGREDIENTS LIST QUERY
-  if (q.includes('ingredient') || q.includes('what do i need') || q.includes('what is needed')) {
+  if (q.includes('ingredient') || q.includes('what do i need') || q.includes('what is needed') || q.includes('सामग्री') || q.includes('పదార్థాలు')) {
     return `${rName} calls for: ${ingredients.join(', ')}. You can tap the Recipe Context drawer above to see every item.`;
   }
 
   // 12. DYNAMIC MATCH AGAINST RECIPE CONTENT
-  // Search the recipe steps for matching keywords in the user's question
-  const words = q.split(/\s+/).filter((w) => w.length > 3 && !['what', 'when', 'where', 'make', 'cook', 'this', 'that', 'with', 'from', 'have', 'need', 'tell'].includes(w));
-  for (let i = 0; i < steps.length; i++) {
-    const stepText = steps[i];
-    const stepLower = stepText.toLowerCase();
-    const matchesWord = words.some((w) => stepLower.includes(w));
-    if (matchesWord) {
-      return `In Step ${i + 1}: ${stepText}`;
+  // Search the recipe steps for substantive culinary keywords (at least 2 matching words or specific ingredient/action nouns)
+  const stopWords = new Set([
+    'what', 'when', 'where', 'make', 'cook', 'this', 'that', 'with', 'from', 'have', 'need', 'tell', 'about', 'just', 'some', 'please', 'know', 'doing', 'right', 'there', 'here', 'look', 'good', 'sure', 'yeah', 'okay'
+  ]);
+  const substantiveWords = q
+    .split(/\s+/)
+    .map((w) => w.replace(/[.,/#!$%^&*;:{}=\-_`~()?"']/g, ''))
+    .filter((w) => w.length >= 4 && !stopWords.has(w));
+
+  if (substantiveWords.length >= 2) {
+    for (let i = 0; i < steps.length; i++) {
+      const stepText = steps[i];
+      const stepLower = stepText.toLowerCase();
+      const matchCount = substantiveWords.filter((w) => stepLower.includes(w)).length;
+      if (matchCount >= 2 || (matchCount >= 1 && substantiveWords.length === 1)) {
+        return `Regarding that in Step ${i + 1}: ${stepText}`;
+      }
     }
   }
 
-  // 13. FRIENDLY INFORMATIVE DEFAULT (Tailored to active step, NO generic robot script)
+  // 13. CLARIFICATION FALLBACK (Avoid bluff/hallucinated answers on noise)
+  // If the query couldn't be matched with high confidence, give a helpful prompt rather than a random guess:
   if (lang === 'hi') {
-    return `स्टेप ${activeStepNum} के लिए निर्देश: "${activeStepText}"। किसी भी सामग्री, मात्रा या समय के बारे में पूछें, या तैयार होने पर 'अगला स्टेप' कहें!`;
+    return `मुझे आपकी बात पूरी तरह समझ नहीं आई। क्या आप सामग्री, पकाने के समय या तापमान के बारे में पूछना चाहते हैं? या 'अगला स्टेप' बोलें।`;
   }
   if (lang === 'te') {
-    return `దశ ${activeStepNum} సూచన: "${activeStepText}"। పదార్థాల కొలతలు లేదా సమయం గురించి ఏదైనా అడగండి, లేదా సిద్ధంగా ఉన్నప్పుడు 'తరువాతి దశ' అని చెప్పండి!`;
+    return `మీరు చెప్పింది స్పష్టంగా వినపడలేదు. పదార్థాలు, సమయం లేదా తదుపరి దశ గురించి మళ్ళీ అడగండి, లేదా 'తరువాతి దశ' అని చెప్పండి.`;
   }
-  return `For Step ${activeStepNum} of ${rName}, the goal is: "${activeStepText}". Ask me about any ingredient, substitution, cooking time, or say 'next step' whenever you're ready!`;
+  return `I didn't quite catch that. You can ask about ingredients, cooking time, heat levels, or say "next step" when you're ready!`;
 }

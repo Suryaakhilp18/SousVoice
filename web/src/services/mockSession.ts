@@ -70,7 +70,11 @@ export const startMockSession = async (): Promise<void> => {
             trimmed.startsWith('hold') ||
             trimmed.startsWith('pause') ||
             trimmed.includes('wait!') ||
-            trimmed.includes('stop!');
+            trimmed.includes('stop!') ||
+            trimmed.startsWith('रुको') ||
+            trimmed.startsWith('रुकिए') ||
+            trimmed.startsWith('आగు') ||
+            trimmed.startsWith('ఆగండి');
 
           if (isExplicit) {
             if (vadSustainedTimer) {
@@ -81,14 +85,14 @@ export const startMockSession = async (): Promise<void> => {
             return;
           }
 
-          // VAD barge-in: require at least 3 meaningful words (≥2 chars each)
-          // AND sustain the speech for 350ms before committing — prevents ambient
-          // noise, plate clinks, or partial syllables from firing a barge-in.
+          // VAD barge-in: require at least 4 meaningful words (≥3 chars each)
+          // AND sustain the speech for 500ms before committing — prevents speaker audio echo,
+          // ambient noise, or accidental coughs from interrupting the assistant.
           const meaningfulWords = trimmed
             .split(/\s+/)
-            .filter((w) => w.replace(/[^a-z]/g, '').length >= 2);
+            .filter((w) => w.replace(/[.,/#!$%^&*;:{}=\-_`~()?"']/g, '').length >= 3);
 
-          if (meaningfulWords.length >= 3) {
+          if (meaningfulWords.length >= 4) {
             if (!vadSustainedTimer) {
               vadSustainedTimer = setTimeout(() => {
                 vadSustainedTimer = null;
@@ -97,7 +101,7 @@ export const startMockSession = async (): Promise<void> => {
                 if (s.voiceState === 'speaking' || isSpeakingOutLoud()) {
                   triggerInterruption('vad');
                 }
-              }, 350);
+              }, 500);
             }
           } else {
             // Not enough words yet — cancel any pending VAD timer
