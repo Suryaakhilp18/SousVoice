@@ -1,7 +1,7 @@
-﻿# 🍳 SousVoice
+# 🍳 SousVoice
 ### AI-Powered Voice Kitchen Companion
 
-> **A voice-native AI cooking companion that guides you step-by-step through any recipe, answers contextual culinary questions in real time, and allows instant hands-free interruption (barge-in) without stale audio.**
+> **A voice-native, multilingual AI cooking companion that guides you step-by-step through any recipe, answers contextual culinary questions in real time, scales servings dynamically without limits, and allows instant hands-free interruption (barge-in) across English, Hindi, and Telugu.**
 
 ---
 
@@ -17,29 +17,38 @@
 
 ## ✨ Why SousVoice?
 
-Cooking is a messy, high-cognitive-load physical task. Your hands are covered in flour, oil, or water; timers are ticking, oil is heating, and your attention is divided. 
+Cooking is a messy, high-cognitive-load physical task. Your hands are covered in flour, oil, or water; timers are ticking, oil is heating, and your attention is divided between the stove and the prep station.
 
 Traditional recipe websites and generic chatbot assistants fail in the kitchen:
-- **Screen Dependency**: Unlocking your phone or scrolling a recipe with wet, sticky hands stains devices and interrupts cooking.
+- **Screen Dependency**: Unlocking your phone or scrolling a recipe with wet, sticky hands stains devices and interrupts cooking cadence.
 - **The Interruption Problem**: If an assistant begins reading a paragraph-long instruction and you quickly need to ask, *"Wait, how much salt?"*, standard chatbots force you to wait for speech to finish or queue your query after the old response.
 - **Acoustic Echo & Clatter**: Splattering oil, running taps, exhaust hoods, and the device speaker's own audio create acoustic feedback loops that confuse speech recognition.
 - **Loss of Situational Context**: Asking *"Can I use an induction stove for this?"* requires understanding the *active cooking step*, temperature profile, and ingredient states—not just a generic web search.
+- **Language & Metric Barriers**: Millions of cooks naturally think and cook in Indian languages (Hindi, Telugu) or need recipes scaled for family gatherings, which static websites fail to provide.
 
-**SousVoice solves this** by pairing hands-free, continuous conversational speech with **sub-millisecond generation-fenced interruption recovery**, keeping you focused on the stove.
+**SousVoice solves this** by pairing hands-free, continuous conversational speech with **sub-millisecond generation-fenced interruption recovery**, **deep multilingual localization**, and **dynamic serving math**, keeping you focused on the stove.
 
 ---
 
 ## 🎯 What It Does
 
-- **Dynamic Recipe Ingestion**: Paste any URL from major recipe sites or YouTube, or launch one-click culinary standards (*Hyderabadi Chicken Dum Biryani*, *Paneer Butter Masala*, *Creamy Garlic Penne Pasta*, *Masala Dosa*, *Shoyu Ramen*).
+- **Dynamic Recipe Ingestion**: Paste any URL from major recipe sites or YouTube, or launch one-click culinary standards (*Hyderabadi Chicken Dum Biryani*, *Paneer Butter Masala*, *Creamy Garlic Penne Pasta*, *Crispy Masala Dosa*, *Shoyu Ramen*, *Classic Fluffy Buttermilk Pancakes*).
+- **End-to-End Multilingual Support (English, हिन्दी, తెలుగు)**:
+  - Select your preferred language from the homepage or switch mid-cooking with **zero cooking state loss**.
+  - Localizes recipe titles, ingredients, indexed steps, quantities, and substitutions in natural, home-style culinary Telugu and Hindi.
+  - Native browser speech recognition (`te-IN`, `hi-IN`, `en-US`) with Unicode-aware Indic speech filtering (`\p{L}\p{M}\p{N}`).
+  - Truthful TTS status indicators: displays `RIME TTS ACTIVE` for English and `HINDI VOICE ACTIVE` / `TELUGU VOICE ACTIVE` for native Indian speech synthesis.
+- **Fully Dynamic Serving Scaling (0 to Infinity)**:
+  - Real-time, non-destructive serving adjustments with no artificial upper ceiling (cook for 2, 4, 8, 20, or 100+ guests).
+  - Proportional scaling across simple measurements, compound ingredients (*"1 tsp red chili powder & 1/2 tsp turmeric"*), quantities dictionaries, and step instruction texts.
 - **Synchronized Step-by-Step Guidance**: Tracks active step, completed milestones, and calculated progress percentages in lockstep.
-- **Real-Time Hands-Free Voice Control**: Speak step advancements (*"Next step"*, *"Done"*, *"Go to step 4"*) without touching the screen.
-- **Sub-Millisecond Barge-In / Interruption**: Saying *"Wait"*, *"Stop"*, or asking an urgent question instantly cuts off active audio output and answers your new question.
+- **Real-Time Hands-Free Voice Control**: Speak step advancements (*"Next step"*, *"Done"*, *"अगला स्टेप"*, *"తరువాతి దశ"*) without touching the screen.
+- **Sub-Millisecond Barge-In / Interruption**: Saying *"Wait"*, *"Stop"*, *"रुको"*, *"ఆగండి"*, or asking an urgent question instantly cuts off active audio output and immediately answers your new question.
 - **Acoustic Feedback & Echo Cancellation**: Prevents the assistant from hearing its own voice through device speakers, filtering out false triggers and ambient kitchen noise.
 - **Persistent Chat Transcript**: Keeps complete multi-turn conversation history accessible with independent scrollback and a floating *"Jump to latest"* shortcut.
 - **FIFO Question Queue**: Gracefully handles back-to-back rapid inquiries in sequential order without dropping cooking state.
-- **Context-Aware Culinary Intelligence**: Answers substitutions (*"Can I swap heavy cream for Greek yogurt?"*), heat levels, and timing based on the current recipe and active step.
-- **Zero-Barrier Fallback**: Dual-architecture support—runs directly in the browser via speech synthesis and recognition, or connects to the Python LiveKit voice agent.
+- **Context-Aware Culinary Intelligence**: Answers substitutions (*"Can I swap chicken for paneer?"*), heat levels (*"What induction setting for dum?"*), timing, and kitchen troubleshooting with conversational memory.
+- **Zero-Barrier Dual Architecture**: Runs client-side in the browser via Web Speech & Web Audio APIs, or connects to the Python LiveKit voice agent.
 
 ---
 
@@ -96,8 +105,33 @@ The UI features a dedicated, unclipped **Voice Command Center (`VoiceOrbVisualiz
 - **`Listening` / `Voice Ready`**: Green emerald aura with active microphone monitoring.
 - **`Hearing You...`**: Amber halo responding to live mic levels while the cook speaks.
 - **`Thinking...`**: Dashed amber spinner indicating prompt resolution.
-- **`Speaking (Rime TTS)`**: Glowing terracotta hero banner with 7 live bouncing waveform frequency bars and concentric soundwave rings.
+- **`Speaking (Rime TTS / Telugu Voice / Hindi Voice)`**: Glowing terracotta hero banner with 7 live bouncing waveform frequency bars and concentric soundwave rings. Truthful status badge reflects the active speech engine.
 - **`Interrupted!`**: Crimson alert badge signaling that stale speech was successfully fenced.
+
+---
+
+## 🌐 Multilingual & Scaling Architecture
+
+### 1. Unified Recipe Localization Pipeline
+- Located in `src/services/recipeLocalization.ts` and `src/services/localization.ts`.
+- Complete natural translations for top global and Indian recipes (Pancakes, Hyderabadi Biryani, Paneer Butter Masala, Penne Pasta, Masala Dosa, Ramen, Pizza, Fried Rice, Tacos, Salmon).
+- Preserves numerical measurements, units, cooking temperatures, and times while delivering authentic, conversational phrasing.
+- Generic fallback translator (`localizeGenericText`) automatically normalizes procedurally extracted URLs.
+
+### 2. Indic Speech Recognition & Echo Filtering
+- Standard ASCII regex (`[^\w\s]`) strips Indian script vowel signs (matras) and characters, causing browser STT to misclassify genuine speech as silence or echo.
+- SousVoice uses Unicode-aware property escapes:
+  ```ts
+  incomingText.toLowerCase().replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ').trim();
+  ```
+- Dynamic language switching restarts the continuous speech recognition instance with the correct BCP-47 locale (`te-IN`, `hi-IN`, `en-US`) without requiring a page reload or microphone toggle.
+
+### 3. Dynamic Serving Scaler
+- Located in `src/services/ingredientScaler.ts`.
+- Proportional scaling algorithm calculates exact quantities for any serving target:
+  $$\text{scaledQty} = \text{baseQty} \times \frac{\text{targetServings}}{\text{baseServings}}$$
+- Formats vulgar fractions ($1/2$, $1/4$, $3/4$), metric units ($g$, $kg$, $ml$, $l$), and imperial units ($tsp$, $tbsp$, $cups$).
+- Handles compound ingredients connected with `&` or `and` seamlessly.
 
 ---
 
@@ -120,11 +154,11 @@ The UI features a dedicated, unclipped **Voice Command Center (`VoiceOrbVisualiz
 ┌──────────────────────────────────────┐              ┌─────────────────────────┐
 │     Client Speech & AI Engine        │              │   Flask Token Server    │
 │  - Web Speech API (STT & TTS)        │              │  (scripts/token_server) │
-│  - Echo Cancellation & VAD Filter    │              └────────────┬────────────┘
+│  - Indic Unicode VAD & Echo Filter   │              └────────────┬────────────┘
 │  - In-Browser Generation Fencing     │                           │
-│  - OpenAI GPT-4o-mini / Culinary AI  │                           ▼
-└──────────────────────────────────────┘              ┌─────────────────────────┐
-                                                      │  LiveKit WebRTC Cloud   │
+│  - Multilingual AI (EN / HI / TE)    │                           ▼
+│  - Dynamic Serving Scaler (0 to ∞)   │              ┌─────────────────────────┐
+└──────────────────────────────────────┘              │  LiveKit WebRTC Cloud   │
                                                       └────────────┬────────────┘
                                                                    │
                                                       ┌────────────┴────────────┐
@@ -147,15 +181,15 @@ The UI features a dedicated, unclipped **Voice Command Center (`VoiceOrbVisualiz
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| **Frontend Framework** | React 18, TypeScript, Vite | Snappy single-page application with high-performance rendering |
-| **State Management** | Zustand | Centralized reactive store for cooking session, transcript, and voice state |
+| **Frontend Framework** | React 18, TypeScript 5.9, Vite 6 | Snappy single-page application with high-performance rendering |
+| **State Management** | Zustand | Centralized reactive store for cooking session, transcript, servings, and language |
 | **Styling & UI** | Tailwind CSS, Framer Motion | Smooth layout animations, fluid waveform visuals, and dark/light kitchen themes |
 | **Accessibility** | Axe-Core, WCAG 2.1 AA | 100/100 accessibility audit score across 25 verified rules |
-| **Browser Voice** | Web Speech API, Web Audio API | Client-side STT, TTS, volume level analyser, and echo cancellation |
+| **Multilingual Voice** | Web Speech API, Web Audio API | Multilingual STT (`te-IN`, `hi-IN`, `en-US`), speech synthesis, volume analyser |
 | **Cloud Agent** | LiveKit Agents Python SDK | Real-time WebRTC room orchestration and VAD turn management |
 | **Speech-to-Text (STT)** | Deepgram (`nova-3`) | Low-latency streaming speech recognition |
-| **Text-to-Speech (TTS)** | Rime AI (`mistv2`, speaker: `abbie`) | Natural, expressive streaming spoken culinary audio |
-| **LLM Orchestration** | OpenAI GPT-4o-mini | Cooking step understanding, ingredient substitution, and unit math |
+| **Text-to-Speech (TTS)** | Rime AI (`mistv2`) & Native TTS | Expressive spoken culinary audio with truthful UI engine reporting |
+| **LLM Orchestration** | OpenAI GPT-4o-mini | Cooking step understanding, ingredient substitution, unit math, multilingual Q&A |
 | **Hosting & CI/CD** | Vercel | Instant global deployment with automated build validation |
 
 ---
@@ -176,26 +210,30 @@ SousVoice/
 ├── web/                           # Production Web Client (React + TypeScript)
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── HomeLanding.tsx            # URL extractor & preset dish selector
-│   │   │   ├── PreConnectScreen.tsx       # Recipe summary & Start Cooking CTA
+│   │   │   ├── HomeLanding.tsx            # URL extractor, preset dish selector & language picker
+│   │   │   ├── PreConnectScreen.tsx       # Recipe summary, serving scaler & Start Cooking CTA
 │   │   │   ├── LiveSessionScreen.tsx      # Dual-column responsive workspace
-│   │   │   ├── VoiceOrbVisualizer.tsx     # 220px+ Voice Command Center & waveforms
+│   │   │   ├── VoiceOrbVisualizer.tsx     # 220px+ Voice Command Center, waveforms & truthful TTS status
 │   │   │   ├── LiveTranscript.tsx         # Scrollable chat history with jump affordance
-│   │   │   ├── RecipeContextPanel.tsx     # Dish details & ingredient breakdown
+│   │   │   ├── RecipeContextPanel.tsx     # Dish details, scaled ingredients & substitutions
 │   │   │   ├── RecipeProgressRail.tsx     # Interactive step progress rail
 │   │   │   ├── KitchenControlBar.tsx      # Mic toggle, end cooking, quick inquiry chips
 │   │   │   ├── SessionStatsBadge.tsx      # Realtime duration, turns, and barge-in counters
-│   │   │   └── SettingsModal.tsx          # Display theme & AI enhancement settings
+│   │   │   ├── ConnectingScreen.tsx       # Localized connecting state screen
+│   │   │   └── SettingsModal.tsx          # Display theme, language & AI enhancement settings
 │   │   ├── services/
-│   │   │   ├── cookingAiService.ts        # Contextual AI prompting & fallback engine
+│   │   │   ├── cookingAiService.ts        # Multilingual contextual AI prompting & offline fallback engine
+│   │   │   ├── ingredientScaler.ts        # Fully dynamic recipe serving scaler
+│   │   │   ├── localization.ts            # UI translation dictionary (en, hi, te)
 │   │   │   ├── mockSession.ts             # Client-side session & turn engine
 │   │   │   ├── recipeExtractor.ts         # Schema.org JSON-LD & YouTube recipe scraper
-│   │   │   └── speechService.ts           # Hands-free mic, echo cancellation, TTS
+│   │   │   ├── recipeLocalization.ts      # Complete natural recipe content translations
+│   │   │   └── speechService.ts           # Indic Unicode STT, echo cancellation, TTS voice selector
 │   │   ├── store/
-│   │   │   └── useSousVoiceStore.ts       # Central Zustand state store
+│   │   │   └── useSousVoiceStore.ts       # Central Zustand state store (single source of truth)
 │   │   └── App.tsx                        # Main shell & modal manager
 │   ├── test-a11y.js                       # Headless axe-core accessibility audit
-│   ├── test-interaction.js                # Headless 12-step interaction & barge-in test
+│   ├── test-interaction.js                # Headless 16-step interaction, multilingual & scaling test
 │   └── package.json
 ├── requirements.txt               # Python backend dependencies
 └── README.md                      # Project documentation
@@ -248,12 +286,12 @@ python -m agent.main dev
 
 ## 🧪 Verification & Quality Assurance
 
-Every release runs through four strict verification gates:
+Every release runs through strict verification gates:
 
 ```bash
 cd web
 
-# 1. Type Check & Build
+# 1. Type Check & Production Build
 npm run build
 
 # 2. Code Quality & Linting
@@ -262,27 +300,31 @@ npm run lint
 # 3. Accessibility Compliance (Axe-Core, 100/100)
 npm run test:a11y
 
-# 4. End-to-End Headless Interaction & Barge-In Suite
+# 4. End-to-End Headless Interaction, Multilingual & Barge-In Suite
 npm run test:interaction
 ```
 
 ### Verified Test Results
-- **TypeScript & Vite Build**: Passed (0 errors, 0 warnings).
+- **TypeScript & Vite Build**: Passed cleanly in 10.4s (0 errors, 0 warnings).
 - **ESLint**: Passed cleanly.
 - **Accessibility**: **100/100** score across 25 rules (0 violations).
-- **Interactive Test Suite**: **12/12 steps verified**:
-  1. Initial home screen load
-  2. Dynamic recipe parsing (Biryani, Pasta, Ramen, Dosa, Paneer)
+- **Interactive Test Suite**: **16/16 steps verified**:
+  1. Initial home screen load & language initialization
+  2. Dynamic recipe parsing (Biryani, Pasta, Ramen, Dosa, Paneer, Pancakes)
   3. Session connection & Step 1 greeting
-  4. Ingredient substitution inquiry
-  5. Equipment setting inquiry (Induction heat)
-  6. Mid-speech barge-in interruption (`"Wait! How much salt again?"`)
+  4. Ingredient substitution inquiry (*"Can I replace chicken with paneer?"*)
+  5. Equipment setting inquiry (*"What if I am using an induction stove?"*)
+  6. Mid-speech barge-in interruption (*"Wait! How much salt again?"*)
   7. Turn fencing & recovery answer generation
-  8. FIFO inquiry queue processing
-  9. Next-step advancement (`"Next step"`, `"Done."`)
-  10. Direct step jumps (`"Go to step four"`)
-  11. Session conclusion & performance metrics
-  12. YouTube URL extraction resilience
+  8. FIFO inquiry queue processing (sequential rapid questions without state loss)
+  9. Next-step advancement (*"Next step"*, *"Done."*)
+  10. Direct step jumps (*"Go to step four"*) with preceding step completion tracking
+  11. Session conclusion & performance metrics summary
+  12. YouTube URL extraction resilience (prevents generic "Watch" title)
+  13. Dynamic serving scaling (proportional ingredient scaling for 8 and 2 servings)
+  14. **Telugu Multilingual Pipeline**: localized title, steps, ingredients, Telugu AI response to *"ఉప్పు ఎంత వేయాలి?"*, and Telugu step navigation (*"తరువాతి దశ"*)
+  15. **Hindi Multilingual Pipeline**: localized title, steps, ingredients, and Hindi AI response to *"कितना नमक डालना है?"*
+  16. **Indic Unicode Echo Filter**: verified Telugu and Hindi speech are never stripped into whitespace or rejected as echo
 
 ---
 
@@ -296,9 +338,9 @@ npm run test:interaction
 
 ## 🔮 Roadmap & Future Improvements
 
-- **Multilingual Cooking Guidance**: Real-time voice translation across Hindi, Spanish, Mandarin, and regional culinary dialects.
-- **Multimodal Computer Vision**: Integrating camera feeds to inspect doneness (e.g., *"Is this onion translucent yet?"*, *"Are these bubbles ready for dumpling folding?"*).
+- **Multimodal Computer Vision**: Integrating camera feeds to inspect doneness (e.g., *"Is this onion translucent yet?"*, *"Are these bubbles ready for flipping?"*).
 - **Smart Timer Synthesis**: Automatic detection of temporal instructions (*"Simmer for 15 minutes"*) with voice-controlled concurrent kitchen timers.
+- **Additional Regional Languages & Dialects**: Expanding to Tamil, Kannada, Bengali, and Spanish.
 - **Hardware Foot Pedal Integration**: Bluetooth kitchen pedal support for commercial kitchen stations.
 
 ---
