@@ -1,6 +1,8 @@
 ﻿import React from 'react';
 import type { ThemeMode } from '../types';
 import { Moon, Sun, X, Monitor, Sparkles } from 'lucide-react';
+import { useSousVoiceStore } from '../store/useSousVoiceStore';
+import { getTranslation } from '../services/localization';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -15,6 +17,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   onSetTheme,
 }) => {
+  const { language } = useSousVoiceStore();
+  const t = getTranslation(language);
+
   if (!isOpen) return null;
 
   return (
@@ -27,7 +32,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       <div className="w-full max-w-md bg-kitchen-surface border-2 border-kitchen-border rounded-3xl p-6 shadow-kitchen text-kitchen-text-primary">
         <div className="flex items-center justify-between pb-4 border-b border-kitchen-border mb-5">
           <h2 id="settings-heading" className="text-xl font-extrabold tracking-tight">
-            SousVoice Settings
+            {t.settingsTitle}
           </h2>
           <button
             type="button"
@@ -42,7 +47,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Theme Chooser */}
         <div className="mb-6">
           <label className="block text-xs font-bold uppercase tracking-wider text-kitchen-text-muted mb-2.5">
-            Display Theme
+            {t.displayTheme}
           </label>
           <div className="grid grid-cols-3 gap-2">
             <button
@@ -55,7 +60,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               }`}
             >
               <Moon className="w-5 h-5" />
-              <span>Dark Kitchen</span>
+              <span>{t.darkKitchen}</span>
             </button>
             <button
               type="button"
@@ -67,7 +72,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               }`}
             >
               <Sun className="w-5 h-5" />
-              <span>Daylight</span>
+              <span>{t.daylight}</span>
             </button>
             <button
               type="button"
@@ -79,7 +84,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               }`}
             >
               <Monitor className="w-5 h-5" />
-              <span>System</span>
+              <span>{t.systemTheme}</span>
             </button>
           </div>
         </div>
@@ -88,7 +93,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="mb-6 p-4 bg-kitchen-elevated border border-kitchen-border rounded-2xl">
           <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-kitchen-text-muted mb-1.5">
             <Sparkles className="w-3.5 h-3.5 text-kitchen-amber" />
-            <span>AI Enhancement (Optional)</span>
+            <span>{t.aiEnhancement}</span>
           </label>
           <input
             type="password"
@@ -104,7 +109,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             className="w-full px-3 py-2 text-xs bg-kitchen-surface border border-kitchen-border rounded-xl text-kitchen-text-primary focus:outline-none focus:border-kitchen-amber font-mono"
           />
           <p className="text-[11px] text-kitchen-text-muted mt-1.5">
-            Add your OpenAI key for smarter, more personalized cooking answers. Saved locally in your browser.
+            {t.aiEnhancementDesc}
           </p>
         </div>
 
@@ -113,7 +118,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           onClick={onClose}
           className="w-full py-3 bg-kitchen-amber hover:brightness-110 text-slate-950 rounded-xl font-extrabold text-sm transition-all"
         >
-          Done
+          {t.done}
         </button>
       </div>
     </div>

@@ -1,21 +1,24 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Globe,
   Loader2,
   Search,
   Sparkles,
+  Languages,
 } from 'lucide-react';
 import { useSousVoiceStore } from '../store/useSousVoiceStore';
 import { extractRecipeFromUrl } from '../services/recipeExtractor';
 import { POPULAR_RECIPES } from '../data/recipe';
 import type { Recipe } from '../types';
+import { getTranslation, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../services/localization';
 
 export const HomeLanding: React.FC = () => {
-  const { setScreen, clearRecipeAndSession } = useSousVoiceStore();
+  const { setScreen, clearRecipeAndSession, language, setLanguage } = useSousVoiceStore();
   const [urlInput, setUrlInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const t = getTranslation(language);
 
   const handleSelectRecipe = (recipe: Recipe) => {
     clearRecipeAndSession(recipe);
@@ -26,7 +29,7 @@ export const HomeLanding: React.FC = () => {
     e.preventDefault();
     const clean = urlInput.trim();
     if (!clean) {
-      setErrorMessage('Please enter a recipe or dish link.');
+      setErrorMessage(language === 'hi' ? 'कृपया कोई रेसिपी लिंक दर्ज करें।' : language === 'te' ? 'దయచేసి ఏదైనా రెసిపీ లింక్‌ను నమోదు చేయండి.' : 'Please enter a recipe or dish link.');
       return;
     }
 
@@ -40,7 +43,11 @@ export const HomeLanding: React.FC = () => {
     } catch (err: any) {
       setErrorMessage(
         err?.message ||
-          "Could not access recipe at this URL. Try one of the dishes below or check your URL."
+          (language === 'hi'
+            ? 'इस लिंक से रेसिपी नहीं मिल सकी। कृपया नीचे दी गई डिश चुनें या लिंक जांचें।'
+            : language === 'te'
+            ? 'ఈ లింక్ నుండి రెసిపీని సేకరించలేకపోయాము. దయచేసి క్రింది వంటకాల్లో ఒకదాన్ని ఎంచుకోండి.'
+            : 'Could not access recipe at this URL. Try one of the dishes below or check your URL.')
       );
     } finally {
       setIsLoading(false);
@@ -48,7 +55,7 @@ export const HomeLanding: React.FC = () => {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center flex-1 w-full max-w-4xl mx-auto py-6 px-2 text-center gap-10">
+    <div className="relative flex flex-col items-center justify-center flex-1 w-full max-w-4xl mx-auto py-6 px-2 text-center gap-8">
       {/* Background Ambient Culinary Steam Glow (aria-hidden) */}
       <div
         className="absolute top-4 -z-10 pointer-events-none overflow-hidden w-full max-w-2xl h-80 flex justify-center items-center opacity-50 dark:opacity-30 select-none"
@@ -82,14 +89,52 @@ export const HomeLanding: React.FC = () => {
         />
       </div>
 
+      {/* LANGUAGE SELECTOR - PROMINENT ON HOMEPAGE */}
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col sm:flex-row items-center justify-center gap-2.5 p-2 bg-kitchen-surface border border-kitchen-border/90 rounded-2xl shadow-kitchen-sm"
+        role="region"
+        aria-label="Language selection"
+      >
+        <div className="flex items-center gap-2 px-2 text-xs font-bold text-kitchen-text-muted uppercase tracking-wider">
+          <Languages className="w-4 h-4 text-kitchen-amber" />
+          <span>{t.selectLanguage}:</span>
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-wrap justify-center">
+          {(Object.keys(SUPPORTED_LANGUAGES) as SupportedLanguage[]).map((langCode) => {
+            const lang = SUPPORTED_LANGUAGES[langCode];
+            const isSelected = language === langCode;
+
+            return (
+              <button
+                key={langCode}
+                type="button"
+                onClick={() => setLanguage(langCode)}
+                aria-pressed={isSelected}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all active:scale-95 flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-kitchen-amber text-slate-950 shadow-kitchen-blue-glow font-black'
+                    : 'bg-kitchen-elevated text-kitchen-text-secondary border border-kitchen-border/70 hover:text-kitchen-text-primary hover:border-kitchen-amber'
+                }`}
+              >
+                <span>{lang.nativeLabel}</span>
+                {langCode !== 'en' && <span className="opacity-75 font-normal">({lang.label})</span>}
+              </button>
+            );
+          })}
+        </div>
+      </motion.div>
+
       {/* Hero Badge */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
         className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-kitchen-amber/40 bg-kitchen-amber/10 text-kitchen-amber text-xs sm:text-sm font-bold uppercase tracking-wider shadow-kitchen-blue-glow"
       >
         <Sparkles className="w-4 h-4 text-kitchen-amber" />
-        <span>Real-Time Voice AI • Hands-Free Cooking Companion</span>
+        <span>{t.heroBadge}</span>
       </motion.div>
 
       {/* Hero Title & Subtitle */}
@@ -100,10 +145,10 @@ export const HomeLanding: React.FC = () => {
         className="space-y-4 max-w-2xl"
       >
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-kitchen-text-primary leading-[1.15]">
-          Turn <span className="text-kitchen-amber">Any Recipe</span> into an Interactive Voice Assistant
+          {t.heroTitlePrefix} <span className="text-kitchen-amber">{t.heroTitleAccent}</span> {t.heroTitleSuffix}
         </h1>
         <p className="text-base sm:text-lg text-kitchen-text-secondary leading-relaxed">
-          Paste any recipe link or pick a dish. SousVoice extracts the steps, understands every ingredient, answers follow-up questions in real time with conversational memory, and lets you interrupt hands-free.
+          {t.heroSubtitle}
         </p>
       </motion.div>
 
@@ -125,7 +170,7 @@ export const HomeLanding: React.FC = () => {
                 setUrlInput(e.target.value);
                 if (errorMessage) setErrorMessage('');
               }}
-              placeholder="Paste recipe or video URL (YouTube, Allrecipes, FoodNetwork...)"
+              placeholder={t.pastePlaceholder}
               className="w-full bg-transparent text-kitchen-text-primary placeholder:text-kitchen-text-muted text-sm sm:text-base outline-none"
             />
           </div>
@@ -138,12 +183,12 @@ export const HomeLanding: React.FC = () => {
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Analyzing Recipe...</span>
+                <span>{t.analyzingRecipe}</span>
               </>
             ) : (
               <>
                 <Search className="w-4 h-4" />
-                <span>Load Recipe</span>
+                <span>{t.loadRecipe}</span>
               </>
             )}
           </button>
@@ -164,7 +209,7 @@ export const HomeLanding: React.FC = () => {
         className="flex flex-col items-center gap-2.5 w-full max-w-2xl"
       >
         <span className="text-xs font-bold uppercase tracking-wider text-kitchen-text-muted">
-          Or Quick Test with a Pre-Extracted Dish:
+          {t.orQuickTest}
         </span>
         <div className="flex flex-wrap justify-center gap-2">
           <button
@@ -213,33 +258,33 @@ export const HomeLanding: React.FC = () => {
       <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-left pt-4">
         <div className="p-4 bg-kitchen-surface border border-kitchen-border rounded-2xl">
           <div className="text-xl font-mono font-bold text-kitchen-amber mb-1">01</div>
-          <h3 className="text-base font-bold text-kitchen-text-primary mb-1">Paste Any URL</h3>
+          <h3 className="text-base font-bold text-kitchen-text-primary mb-1">{t.howItWorks01Title}</h3>
           <p className="text-xs text-kitchen-text-muted leading-relaxed">
-            Accepts recipe links from any website with JSON-LD schema or structured tables.
+            {t.howItWorks01Desc}
           </p>
         </div>
 
         <div className="p-4 bg-kitchen-surface border border-kitchen-border rounded-2xl">
           <div className="text-xl font-mono font-bold text-kitchen-cyan mb-1">02</div>
-          <h3 className="text-base font-bold text-kitchen-text-primary mb-1">AI Understands</h3>
+          <h3 className="text-base font-bold text-kitchen-text-primary mb-1">{t.howItWorks02Title}</h3>
           <p className="text-xs text-kitchen-text-muted leading-relaxed">
-            Extracts prep times, ingredient quantities, substitutions, and indexed cooking steps.
+            {t.howItWorks02Desc}
           </p>
         </div>
 
         <div className="p-4 bg-kitchen-surface border border-kitchen-border rounded-2xl">
           <div className="text-xl font-mono font-bold text-kitchen-terracotta mb-1">03</div>
-          <h3 className="text-base font-bold text-kitchen-text-primary mb-1">Real-Time Voice</h3>
+          <h3 className="text-base font-bold text-kitchen-text-primary mb-1">{t.howItWorks03Title}</h3>
           <p className="text-xs text-kitchen-text-muted leading-relaxed">
-            Instant spoken replies and active mic listening without touching your screen.
+            {t.howItWorks03Desc}
           </p>
         </div>
 
         <div className="p-4 bg-kitchen-surface border border-kitchen-border rounded-2xl">
           <div className="text-xl font-mono font-bold text-kitchen-emerald mb-1">04</div>
-          <h3 className="text-base font-bold text-kitchen-text-primary mb-1">Interrupt Anytime</h3>
+          <h3 className="text-base font-bold text-kitchen-text-primary mb-1">{t.howItWorks04Title}</h3>
           <p className="text-xs text-kitchen-text-muted leading-relaxed">
-            Sub-millisecond generation-fenced barge-in cancels audio instantly and answers.
+            {t.howItWorks04Desc}
           </p>
         </div>
       </div>

@@ -1,6 +1,8 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import type { AgentVoiceState, AppError, AppScreen, Recipe, SessionStats, ThemeMode, TranscriptMessage } from '../types';
 import { RECIPE_DATA } from '../data/recipe';
+import type { SupportedLanguage } from '../services/localization';
+import { scaleIngredientText, calculateScaledTime } from '../services/ingredientScaler';
 
 interface SousVoiceState {
   screen: AppScreen;
@@ -13,11 +15,14 @@ interface SousVoiceState {
   isMockMode: boolean;
   micLevel: number;
   theme: ThemeMode;
+  language: SupportedLanguage;
   error: AppError | null;
   isSettingsOpen: boolean;
 
   // Recipe & URL state
-  recipe: Recipe;
+  baseRecipe: Recipe;     // Untouched baseline original recipe data
+  recipe: Recipe;         // Currently displayed/active recipe (with scaled ingredients/time)
+  servings: number;       // Fully dynamic non-negative serving count (0 to infinity)
   isExtracting: boolean;
   extractionStatus: string;
 
@@ -33,6 +38,8 @@ interface SousVoiceState {
   setMuted: (muted: boolean) => void;
   setMicLevel: (level: number) => void;
   setTheme: (theme: ThemeMode) => void;
+  setLanguage: (language: SupportedLanguage) => void;
+  setServings: (servings: number) => void;
   setError: (error: AppError | null) => void;
   setMockMode: (mock: boolean) => void;
   setIsSettingsOpen: (open: boolean) => void;
@@ -47,11 +54,42 @@ const getInitialTheme = (): ThemeMode => {
   try {
     const saved = localStorage.getItem('sousvoice-theme') as ThemeMode | null;
     if (saved === 'dark' || saved === 'light' || saved === 'system') return saved;
-  } catch {
-    // ignore
-  }
+  } catch {}
   return 'dark';
 };
+
+const getInitialLanguage = (): SupportedLanguage => {
+  try {
+    const saved = localStorage.getItem('sousvoice-language') as SupportedLanguage | null;
+    if (saved === 'en' || saved === 'hi' || saved === 'te') return saved;
+  } catch {}
+  return 'en';
+};
+
+/**
+ * Derives a scaled recipe view from the original base recipe without mutating the original.
+ */
+function deriveScaledRecipe(base: Recipe, targetServings: number): Recipe {
+  const baseServings = base.servings || 4;
+  const safeTarget = Math.max(0, isNaN(targetServings) ? baseServings : targetServings);
+
+  const scaledIngredients = base.ingredients.map((ing) =>
+    scaleIngredientText(ing, safeTarget, baseServings)
+  );
+
+  const scaledCookTime = calculateScaledTime(base.cookTime, safeTarget, baseServings);
+  const scaledTotalTime = calculateScaledTime(base.totalTime, safeTarget, baseServings);
+  const scaledPrepTime = calculateScaledTime(base.prepTime, safeTarget, baseServings);
+
+  return {
+    ...base,
+    servings: safeTarget,
+    ingredients: scaledIngredients,
+    cookTime: scaledCookTime,
+    totalTime: scaledTotalTime,
+    prepTime: scaledPrepTime,
+  };
+}
 
 export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
   screen: 'home',
@@ -69,10 +107,13 @@ export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
   isMockMode: true,
   micLevel: 0,
   theme: getInitialTheme(),
+  language: getInitialLanguage(),
   error: null,
   isSettingsOpen: false,
 
+  baseRecipe: RECIPE_DATA,
   recipe: RECIPE_DATA,
+  servings: RECIPE_DATA.servings || 4,
   isExtracting: false,
   extractionStatus: '',
 
@@ -102,10 +143,11 @@ export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
       let updatedTranscript = state.transcript;
       if (targetId) {
         updatedTranscript = state.transcript.map((item) =>
-          item.id === targetId ? { ...item, interrupted: true, interruptedReason: reason || item.interruptedReason } : item
+          item.id === targetId
+            ? { ...item, interrupted: true, interruptedReason: reason || item.interruptedReason }
+            : item
         );
       } else {
-        // Mark last agent message as interrupted
         for (let i = state.transcript.length - 1; i >= 0; i--) {
           if (state.transcript[i].speaker === 'agent') {
             updatedTranscript = [
@@ -160,6 +202,23 @@ export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
     set({ theme });
   },
 
+  setLanguage: (language) => {
+    try {
+      localStorage.setItem('sousvoice-language', language);
+    } catch {}
+    set({ language });
+  },
+
+  setServings: (servingsInput) => {
+    const validServings = Math.max(0, isNaN(servingsInput) ? 0 : Math.floor(servingsInput));
+    const { baseRecipe } = get();
+    const updatedScaledRecipe = deriveScaledRecipe(baseRecipe, validServings);
+    set({
+      servings: validServings,
+      recipe: updatedScaledRecipe,
+    });
+  },
+
   setError: (error) => {
     set({
       error,
@@ -171,11 +230,23 @@ export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
   setMockMode: (isMockMode) => set({ isMockMode }),
   setIsSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
 
-  setRecipe: (recipe) => set({ recipe }),
+  setRecipe: (newRecipe) => {
+    const defaultServings = newRecipe.servings || 4;
+    set({
+      baseRecipe: newRecipe,
+      servings: defaultServings,
+      recipe: deriveScaledRecipe(newRecipe, defaultServings),
+    });
+  },
 
   clearRecipeAndSession: (newRecipe) => {
+    const raw = newRecipe || RECIPE_DATA;
+    const defaultServings = raw.servings || 4;
+    const scaled = deriveScaledRecipe(raw, defaultServings);
     set({
-      recipe: newRecipe || RECIPE_DATA,
+      baseRecipe: raw,
+      recipe: scaled,
+      servings: defaultServings,
       currentStep: 1,
       completedSteps: [],
       transcript: [],
@@ -186,7 +257,7 @@ export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
         interruptedCount: 0,
         startTime: Date.now(),
         durationSeconds: 0,
-      }
+      },
     });
   },
 
@@ -195,6 +266,7 @@ export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
   },
 
   resetSession: () => {
+    const { baseRecipe, servings } = get();
     set({
       screen: 'home',
       voiceState: 'idle',
@@ -203,6 +275,7 @@ export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
       completedSteps: [],
       isMuted: false,
       error: null,
+      recipe: deriveScaledRecipe(baseRecipe, servings),
       stats: {
         turnsCount: 0,
         interruptedCount: 0,

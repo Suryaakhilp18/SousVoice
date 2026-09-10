@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { TranscriptMessage } from '../types';
 import { ArrowDown, Bot, Clock, RotateCcw, User, ZapOff } from 'lucide-react';
 import { handleCookMessage } from '../services/mockSession';
+import { useSousVoiceStore } from '../store/useSousVoiceStore';
+import { getTranslation } from '../services/localization';
 
 interface LiveTranscriptProps {
   transcript: TranscriptMessage[];
@@ -15,6 +17,9 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
   className = '',
   footer,
 }) => {
+  const { language } = useSousVoiceStore();
+  const t = getTranslation(language);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
@@ -22,7 +27,6 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
   const handleScroll = () => {
     if (!scrollContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-    // If the user has scrolled more than 80px away from the bottom:
     const isAtBottom = scrollHeight - (scrollTop + clientHeight) < 80;
     setUserHasScrolledUp(!isAtBottom);
   };
@@ -34,7 +38,6 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
     }
   };
 
-  // Only auto-scroll to the bottom when new messages arrive IF user is not inspecting past history
   useEffect(() => {
     if (!userHasScrolledUp) {
       scrollToBottom(true);
@@ -48,14 +51,14 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
   return (
     <div
       className={`relative flex flex-col bg-kitchen-surface border-2 border-kitchen-border rounded-2xl shadow-kitchen overflow-hidden ${className}`}
-      aria-label="Live Voice Transcript"
+      aria-label={t.liveTranscript}
     >
       <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-kitchen-border bg-kitchen-elevated/40 shrink-0">
         <span className="text-xs font-bold uppercase tracking-wider text-kitchen-amber">
-          Live Conversation Transcript
+          {t.liveTranscript}
         </span>
         <span className="text-xs font-medium text-kitchen-text-muted">
-          {transcript.length} {transcript.length === 1 ? 'turn' : 'turns'}
+          {transcript.length} {transcript.length === 1 ? t.turnSingular : t.turnPlural}
         </span>
       </div>
 
@@ -69,7 +72,11 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
       >
         {transcript.length === 0 ? (
           <div className="flex items-center justify-center h-full min-h-[14rem] text-kitchen-text-muted text-sm sm:text-base italic text-center px-4">
-            SousVoice is listening hands-free. Ask about substitutions, quantities, or cooking steps.
+            {language === 'hi'
+              ? 'सॉस-वॉइस सुन रहा है। सामग्री, मात्रा या किसी भी स्टेप के बारे में पूछें।'
+              : language === 'te'
+              ? 'సాస్‌వాయిస్ వింటోంది. పదార్థాలు, కొలతలు లేదా వంట దశల గురించి అడగండి.'
+              : 'SousVoice is listening hands-free. Ask about substitutions, quantities, or cooking steps.'}
           </div>
         ) : (
           <AnimatePresence initial={false}>
@@ -125,7 +132,7 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
                     {isQueued && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-kitchen-border text-kitchen-text-muted text-[10px] font-mono font-bold tracking-tight uppercase">
                         <Clock className="w-3 h-3" />
-                        Queued Next
+                        {t.queuedNext}
                       </span>
                     )}
 
@@ -134,8 +141,8 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-kitchen-crimson/20 text-kitchen-crimson text-[10px] font-mono font-bold tracking-tight uppercase">
                         <ZapOff className="w-3 h-3" />
                         {msg.interruptedReason === 'explicit-stop'
-                          ? 'You said wait'
-                          : 'Cut off (Barge-in)'}
+                          ? t.youSaidWait
+                          : t.bargeInCutOff}
                       </span>
                     )}
                   </div>
@@ -158,7 +165,7 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
                       className="inline-flex items-center gap-1.5 self-start mt-2 px-2.5 py-1 rounded-lg bg-kitchen-surface border border-kitchen-border hover:border-kitchen-amber text-[11px] font-bold text-kitchen-text-muted hover:text-kitchen-text-primary transition-all active:scale-95"
                     >
                       <RotateCcw className="w-3 h-3 text-kitchen-amber" />
-                      <span>Ask this again</span>
+                      <span>{t.askThisAgain}</span>
                     </button>
                   )}
                 </motion.div>
@@ -181,7 +188,7 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
             className="absolute bottom-20 right-6 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-kitchen-amber text-slate-950 font-bold text-xs shadow-kitchen-blue-glow hover:brightness-110 active:scale-95 transition-all"
           >
             <ArrowDown className="w-3.5 h-3.5" />
-            <span>Jump to latest</span>
+            <span>{t.jumpToLatest}</span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -194,4 +201,3 @@ export const LiveTranscript: React.FC<LiveTranscriptProps> = ({
     </div>
   );
 };
-

@@ -1,7 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
 import { useSousVoiceStore } from '../store/useSousVoiceStore';
 import { Check, ChevronRight, Sparkles } from 'lucide-react';
+import { getTranslation } from '../services/localization';
 
 interface RecipeProgressRailProps {
   currentStep: number;
@@ -14,7 +15,8 @@ export const RecipeProgressRail: React.FC<RecipeProgressRailProps> = ({
   completedSteps,
   onSelectStep,
 }) => {
-  const { recipe } = useSousVoiceStore();
+  const { recipe, language } = useSousVoiceStore();
+  const t = getTranslation(language);
   const total = recipe.steps.length;
   const currentStepText = recipe.steps[currentStep - 1] || recipe.steps[0];
   const percent = Math.round((currentStep / total) * 100);
@@ -26,7 +28,7 @@ export const RecipeProgressRail: React.FC<RecipeProgressRailProps> = ({
         <div className="flex items-center justify-between text-xs font-bold">
           <span className="uppercase tracking-wider text-kitchen-amber flex items-center gap-1">
             <Sparkles className="w-3 h-3" />
-            <span>Step {currentStep} of {total}</span>
+            <span>{t.stepProgress} {currentStep} {t.of} {total}</span>
           </span>
           <span className="text-kitchen-text-muted font-mono">{percent}%</span>
         </div>
@@ -58,51 +60,46 @@ export const RecipeProgressRail: React.FC<RecipeProgressRailProps> = ({
               type="button"
               role="tab"
               aria-selected={isCurrent}
-              aria-label={`Step ${stepNum}`}
+              aria-label={`Jump to step ${stepNum}`}
               onClick={() => onSelectStep(stepNum)}
-              className={`relative flex items-center justify-center w-7 h-7 rounded-full text-[11px] font-bold transition-all duration-150 border focus:outline-none focus:ring-2 focus:ring-kitchen-amber active:scale-95 ${
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all active:scale-95 ${
                 isCurrent
-                  ? 'bg-kitchen-amber text-slate-950 border-kitchen-amber shadow-sm scale-105 font-extrabold ring-2 ring-kitchen-amber/40'
+                  ? 'bg-kitchen-amber text-slate-950 shadow-kitchen-blue-glow ring-2 ring-kitchen-amber/40 scale-105'
                   : isDone
-                  ? 'bg-kitchen-emerald/20 text-kitchen-emerald border-kitchen-emerald/60 hover:bg-kitchen-emerald/30'
-                  : 'bg-kitchen-elevated text-kitchen-text-muted border-kitchen-border hover:border-kitchen-border-strong hover:text-kitchen-text-secondary'
+                  ? 'bg-kitchen-emerald/20 text-kitchen-emerald border border-kitchen-emerald/40 hover:bg-kitchen-emerald/30'
+                  : 'bg-kitchen-elevated text-kitchen-text-muted border border-kitchen-border hover:border-kitchen-border-strong hover:text-kitchen-text-primary'
               }`}
             >
-              {isDone && !isCurrent ? <Check className="w-3 h-3 stroke-[2.5]" /> : stepNum}
+              {isDone && !isCurrent ? <Check className="w-3.5 h-3.5" /> : stepNum}
             </button>
           );
         })}
       </div>
 
       {/* Active Step Instruction Card */}
-      <div className="bg-kitchen-elevated border border-kitchen-border rounded-xl p-2.5 sm:p-3 flex flex-col gap-1.5">
-        <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold text-kitchen-text-muted uppercase tracking-wider">
-          <span>Active Instruction</span>
-          <span className="text-kitchen-amber">Step {currentStep}</span>
+      <div className="bg-kitchen-elevated border border-kitchen-border/80 rounded-xl p-3 flex flex-col gap-2">
+        <div className="flex items-center justify-between text-[11px] font-bold">
+          <span className="uppercase tracking-wider text-kitchen-amber">
+            {t.activeInstruction}
+          </span>
+          <span className="text-kitchen-text-muted font-mono">{t.step} {currentStep}</span>
         </div>
 
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className="text-xs sm:text-sm font-semibold leading-relaxed text-kitchen-text-primary"
-        >
+        <p className="text-xs text-kitchen-text-primary leading-relaxed line-clamp-3">
           {currentStepText}
-        </motion.div>
+        </p>
 
         {currentStep < total && (
           <button
             type="button"
             onClick={() => onSelectStep(currentStep + 1)}
-            className="self-end inline-flex items-center gap-1 text-[11px] font-bold text-kitchen-amber hover:text-sky-300 transition-colors mt-0.5"
+            className="self-end inline-flex items-center gap-1 text-[11px] font-bold text-kitchen-amber hover:text-sky-300 transition-colors pt-0.5"
           >
-            <span>Next: Step {currentStep + 1}</span>
-            <ChevronRight className="w-3 h-3" />
+            <span>{t.next}: {t.step} {currentStep + 1}</span>
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
     </div>
   );
 };
-

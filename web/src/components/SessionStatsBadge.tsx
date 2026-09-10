@@ -1,12 +1,17 @@
-import React from 'react';
+﻿import React from 'react';
 import type { SessionStats } from '../types';
 import { Clock, MessageSquare, Zap } from 'lucide-react';
+import { useSousVoiceStore } from '../store/useSousVoiceStore';
+import { getTranslation } from '../services/localization';
 
 interface SessionStatsBadgeProps {
   stats: SessionStats;
 }
 
 export const SessionStatsBadge: React.FC<SessionStatsBadgeProps> = ({ stats }) => {
+  const { language } = useSousVoiceStore();
+  const t = getTranslation(language);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -25,7 +30,7 @@ export const SessionStatsBadge: React.FC<SessionStatsBadgeProps> = ({ stats }) =
             {formatTime(stats.durationSeconds)}
           </span>
         </div>
-        <span className="text-[10px] text-kitchen-text-muted font-medium mt-0.5">Duration</span>
+        <span className="text-[10px] text-kitchen-text-muted font-medium mt-0.5">{t.duration}</span>
       </div>
 
       <div className="flex flex-col items-center justify-center p-1.5 bg-kitchen-elevated rounded-lg">
@@ -35,7 +40,7 @@ export const SessionStatsBadge: React.FC<SessionStatsBadgeProps> = ({ stats }) =
             {stats.turnsCount}
           </span>
         </div>
-        <span className="text-[10px] text-kitchen-text-muted font-medium mt-0.5">Turns</span>
+        <span className="text-[10px] text-kitchen-text-muted font-medium mt-0.5">{t.turns}</span>
       </div>
 
       <div className="flex flex-col items-center justify-center p-1.5 bg-kitchen-elevated rounded-lg">
@@ -45,7 +50,7 @@ export const SessionStatsBadge: React.FC<SessionStatsBadgeProps> = ({ stats }) =
             {stats.interruptedCount}
           </span>
         </div>
-        <span className="text-[10px] text-kitchen-text-muted font-medium mt-0.5">Barge-ins</span>
+        <span className="text-[10px] text-kitchen-text-muted font-medium mt-0.5">{t.bargeIns}</span>
       </div>
     </div>
   );

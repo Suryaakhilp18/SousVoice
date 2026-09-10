@@ -1,7 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 import type { AppError, SessionStats } from '../types';
 import { useSousVoiceStore } from '../store/useSousVoiceStore';
 import { AlertTriangle, CheckCircle2, Home, RotateCcw, Sparkles } from 'lucide-react';
+import { getTranslation } from '../services/localization';
 
 interface EndedSummaryScreenProps {
   isError: boolean;
@@ -17,10 +18,13 @@ export const EndedSummaryScreen: React.FC<EndedSummaryScreenProps> = ({
   isError,
   error,
   stats,
+  completedStepsCount = 0,
+  totalStepsCount = 0,
   onRestart,
   onTryMockMode,
 }) => {
-  const { recipe, setScreen } = useSousVoiceStore();
+  const { recipe, setScreen, language } = useSousVoiceStore();
+  const t = getTranslation(language);
 
   const formatTime = (sec: number) => {
     const mins = Math.floor(sec / 60);
@@ -42,12 +46,12 @@ export const EndedSummaryScreen: React.FC<EndedSummaryScreenProps> = ({
 
       <div>
         <h2 className="text-3xl font-extrabold text-kitchen-text-primary tracking-tight">
-          {isError ? error?.title || 'Connection Failed' : 'Cooking Session Complete!'}
+          {isError ? error?.title || 'Connection Failed' : t.cookingSessionComplete}
         </h2>
         <p className="text-base text-kitchen-text-secondary mt-1 max-w-md mx-auto">
           {isError
             ? 'Voice service could not connect. SousVoice is still fully available — start a new session to cook with AI assistance.'
-            : `Bon appétit! All voice interactions for ${recipe.name} were successfully recorded.`}
+            : `${t.sessionCompleteDesc} (${recipe.name})`}
         </p>
       </div>
 
@@ -59,57 +63,50 @@ export const EndedSummaryScreen: React.FC<EndedSummaryScreenProps> = ({
         </div>
       )}
 
-      {/* Session Performance Metrics */}
-      <div className="w-full bg-kitchen-surface border-2 border-kitchen-border rounded-2xl p-5 shadow-kitchen text-left space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-kitchen-text-muted">
-          Session Summary • {recipe.name}
-        </h3>
+      {/* Performance Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
+        <div className="p-3 bg-kitchen-surface border border-kitchen-border rounded-xl">
+          <span className="block text-xs font-bold uppercase text-kitchen-text-muted">{t.duration}</span>
+          <span className="text-xl font-extrabold text-kitchen-text-primary font-mono mt-0.5">
+            {formatTime(stats.durationSeconds)}
+          </span>
+        </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-kitchen-elevated p-3 rounded-xl text-center">
-            <span className="text-2xl font-mono font-bold text-kitchen-amber block">
-              {stats.turnsCount}
-            </span>
-            <span className="text-[11px] font-bold text-kitchen-text-muted uppercase">
-              Turns Taken
-            </span>
-          </div>
+        <div className="p-3 bg-kitchen-surface border border-kitchen-border rounded-xl">
+          <span className="block text-xs font-bold uppercase text-kitchen-text-muted">{t.turns}</span>
+          <span className="text-xl font-extrabold text-kitchen-text-primary font-mono mt-0.5">
+            {stats.turnsCount}
+          </span>
+        </div>
 
-          <div className="bg-kitchen-elevated p-3 rounded-xl text-center">
-            <span className="text-2xl font-mono font-bold text-kitchen-crimson block">
-              {stats.interruptedCount}
-            </span>
-            <span className="text-[11px] font-bold text-kitchen-text-muted uppercase">
-              Fenced
-            </span>
-          </div>
+        <div className="p-3 bg-kitchen-surface border border-kitchen-border rounded-xl">
+          <span className="block text-xs font-bold uppercase text-kitchen-text-muted">{t.bargeIns}</span>
+          <span className="text-xl font-extrabold text-kitchen-crimson font-mono mt-0.5">
+            {stats.interruptedCount}
+          </span>
+        </div>
 
-          <div className="bg-kitchen-elevated p-3 rounded-xl text-center">
-            <span className="text-2xl font-mono font-bold text-kitchen-cyan block">
-              {formatTime(stats.durationSeconds)}
-            </span>
-            <span className="text-[11px] font-bold text-kitchen-text-muted uppercase">
-              Active Time
-            </span>
-          </div>
+        <div className="p-3 bg-kitchen-surface border border-kitchen-border rounded-xl">
+          <span className="block text-xs font-bold uppercase text-kitchen-text-muted">{t.steps}</span>
+          <span className="text-xl font-extrabold text-kitchen-emerald font-mono mt-0.5">
+            {completedStepsCount}/{totalStepsCount}
+          </span>
         </div>
       </div>
 
-      {/* Navigation Buttons */}
+      {/* Action Buttons */}
       <div className="flex flex-col gap-3 w-full">
         {isError ? (
           <>
-            {/* Primary CTA when error: restart immediately */}
             <button
               type="button"
               onClick={onTryMockMode}
               className="flex items-center justify-center gap-2 w-full h-14 bg-kitchen-amber text-slate-950 font-extrabold text-lg rounded-xl shadow-kitchen-blue-glow transition-all active:scale-95 hover:brightness-110"
             >
               <Sparkles className="w-5 h-5" />
-              <span>Start Cooking</span>
+              <span>{t.startCooking}</span>
             </button>
 
-            {/* Secondary: retry */}
             <button
               type="button"
               onClick={onRestart}
@@ -122,10 +119,10 @@ export const EndedSummaryScreen: React.FC<EndedSummaryScreenProps> = ({
             <button
               type="button"
               onClick={() => setScreen('home')}
-              className="flex items-center justify-center gap-2 w-full h-11 text-kitchen-text-muted hover:text-kitchen-text-primary text-sm font-semibold transition-all"
+              className="flex items-center justify-center gap-2 w-full h-12 bg-kitchen-surface border border-kitchen-border hover:bg-kitchen-elevated text-kitchen-text-muted hover:text-kitchen-text-primary font-bold text-sm rounded-xl transition-all"
             >
               <Home className="w-4 h-4" />
-              <span>Back to Recipe Selection</span>
+              <span>{t.backToHome}</span>
             </button>
           </>
         ) : (
@@ -133,19 +130,19 @@ export const EndedSummaryScreen: React.FC<EndedSummaryScreenProps> = ({
             <button
               type="button"
               onClick={() => setScreen('home')}
-              className="flex items-center justify-center gap-2 w-full h-14 bg-kitchen-surface border-2 border-kitchen-border hover:border-kitchen-amber text-kitchen-text-primary font-bold text-base rounded-xl transition-all active:scale-95"
+              className="flex items-center justify-center gap-2 w-full h-14 bg-kitchen-amber text-slate-950 font-extrabold text-lg rounded-xl shadow-kitchen-blue-glow transition-all active:scale-95 hover:brightness-110"
             >
-              <Home className="w-5 h-5 text-kitchen-amber" />
-              <span>Select Another Dish / Recipe URL</span>
+              <Home className="w-5 h-5" />
+              <span>{t.backToHome}</span>
             </button>
 
             <button
               type="button"
               onClick={onRestart}
-              className="flex items-center justify-center gap-2 w-full h-12 text-kitchen-text-muted hover:text-kitchen-text-primary text-sm font-semibold transition-all"
+              className="flex items-center justify-center gap-2 w-full h-12 bg-kitchen-surface border-2 border-kitchen-border hover:border-kitchen-amber text-kitchen-text-primary font-bold text-sm rounded-xl transition-all active:scale-95"
             >
-              <RotateCcw className="w-4 h-4" />
-              <span>Restart This Recipe</span>
+              <RotateCcw className="w-4 h-4 text-kitchen-amber" />
+              <span>{t.restartRecipe}</span>
             </button>
           </>
         )}

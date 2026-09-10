@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
@@ -7,25 +7,51 @@ import {
   ChevronUp,
   Clock,
   ListOrdered,
+  Minus,
+  Plus,
   RefreshCw,
   ShoppingBag,
   Users,
 } from 'lucide-react';
 import { useSousVoiceStore } from '../store/useSousVoiceStore';
+import { getTranslation } from '../services/localization';
 
 interface RecipeContextPanelProps {
   onSelectStep?: (step: number) => void;
 }
 
 export const RecipeContextPanel: React.FC<RecipeContextPanelProps> = ({ onSelectStep }) => {
-  const { recipe, currentStep, completedSteps, setCurrentStep, setScreen } = useSousVoiceStore();
+  const { recipe, currentStep, completedSteps, setCurrentStep, setScreen, servings, setServings, language } = useSousVoiceStore();
   const [isExpanded, setIsExpanded] = useState(false);
+  const t = getTranslation(language);
 
   const handleStepClick = (stepNum: number) => {
     if (onSelectStep) {
       onSelectStep(stepNum);
     } else {
       setCurrentStep(stepNum);
+    }
+  };
+
+  const handleServingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val === '') {
+      setServings(0);
+      return;
+    }
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed) && parsed >= 0) {
+      setServings(parsed);
+    }
+  };
+
+  const handleIncrement = () => {
+    setServings(servings + 1);
+  };
+
+  const handleDecrement = () => {
+    if (servings > 0) {
+      setServings(servings - 1);
     }
   };
 
@@ -64,24 +90,53 @@ export const RecipeContextPanel: React.FC<RecipeContextPanelProps> = ({ onSelect
           title="Change Dish or load another URL"
         >
           <RefreshCw className="w-3 h-3 text-kitchen-amber" />
-          <span>Switch</span>
+          <span>{t.switchDish}</span>
         </button>
       </div>
 
-      {/* Row 2: Recipe Metrics & Accordion Toggle */}
-      <div className="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-kitchen-border/70 text-xs text-kitchen-text-secondary">
-        <div className="flex items-center gap-2 text-[11px] text-kitchen-text-muted">
-          <span className="flex items-center gap-1 text-kitchen-text-secondary">
-            <Users className="w-3.5 h-3.5 text-kitchen-amber" />
-            {recipe.servings} Servings
+      {/* Row 2: Interactive Unlimited Servings Control + Derived Timing + Ingredients count */}
+      <div className="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-kitchen-border/70 text-xs text-kitchen-text-secondary flex-wrap">
+        <div className="flex items-center gap-2 text-[11px]">
+          {/* Dynamic Unlimited Serving Input with +/- */}
+          <div className="flex items-center gap-1 bg-kitchen-elevated border border-kitchen-border/80 rounded-lg px-1.5 py-0.5" title="Scale recipe servings (any number >= 0)">
+            <Users className="w-3 h-3 text-kitchen-amber shrink-0" />
+            <button
+              type="button"
+              onClick={handleDecrement}
+              aria-label="Decrease servings"
+              className="w-4 h-4 rounded flex items-center justify-center hover:bg-kitchen-active text-kitchen-text-muted hover:text-kitchen-text-primary text-[10px] font-bold transition-colors"
+            >
+              <Minus className="w-2.5 h-2.5" />
+            </button>
+            <input
+              type="number"
+              min="0"
+              value={servings}
+              onChange={handleServingChange}
+              aria-label="Recipe servings"
+              className="w-8 text-center bg-transparent font-extrabold text-kitchen-text-primary text-[11px] outline-none focus:text-kitchen-amber [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+            <button
+              type="button"
+              onClick={handleIncrement}
+              aria-label="Increase servings"
+              className="w-4 h-4 rounded flex items-center justify-center hover:bg-kitchen-active text-kitchen-text-muted hover:text-kitchen-text-primary text-[10px] font-bold transition-colors"
+            >
+              <Plus className="w-2.5 h-2.5" />
+            </button>
+            <span className="text-kitchen-text-muted font-medium text-[10px] pr-0.5">{t.servings}</span>
+          </div>
+
+          <span className="text-kitchen-border">•</span>
+
+          {/* Derived cooking duration */}
+          <span className="flex items-center gap-1 text-kitchen-text-secondary" title="Estimated cooking time">
+            <Clock className="w-3 h-3 text-kitchen-cyan shrink-0" />
+            <span>{recipe.totalTime || recipe.cookTime || '30 min'}</span>
           </span>
-          <span>•</span>
-          <span className="flex items-center gap-1 text-kitchen-text-secondary">
-            <Clock className="w-3.5 h-3.5 text-kitchen-cyan" />
-            {recipe.totalTime || recipe.cookTime || '30 min'}
-          </span>
-          <span>•</span>
-          <span>{recipe.ingredients.length} ingr.</span>
+
+          <span className="text-kitchen-border">•</span>
+          <span className="text-kitchen-text-muted">{recipe.ingredients.length} ingr.</span>
         </div>
 
         <button
@@ -89,23 +144,23 @@ export const RecipeContextPanel: React.FC<RecipeContextPanelProps> = ({ onSelect
           onClick={() => setIsExpanded(!isExpanded)}
           aria-expanded={isExpanded}
           aria-label={isExpanded ? 'Collapse recipe details' : 'Expand recipe details'}
-          className="text-[11px] font-bold text-kitchen-amber hover:text-sky-300 flex items-center gap-1 transition-colors"
+          className="text-[11px] font-bold text-kitchen-amber hover:text-sky-300 flex items-center gap-1 transition-colors ml-auto"
         >
           {isExpanded ? (
             <>
-              <span>Hide Details</span>
+              <span>{t.hideDetails}</span>
               <ChevronUp className="w-3.5 h-3.5" />
             </>
           ) : (
             <>
-              <span>All Steps ({recipe.steps.length})</span>
+              <span>{t.allSteps} ({recipe.steps.length})</span>
               <ChevronDown className="w-3.5 h-3.5" />
             </>
           )}
         </button>
       </div>
 
-      {/* Expandable Accordion: Ingredients & All Steps */}
+      {/* Expandable Accordion: Scaled Ingredients & All Steps */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -115,20 +170,27 @@ export const RecipeContextPanel: React.FC<RecipeContextPanelProps> = ({ onSelect
             transition={{ duration: 0.25, ease: 'easeOut' }}
             className="overflow-hidden border-t border-kitchen-border mt-3 pt-3 space-y-3.5"
           >
-            {/* Ingredients Grid */}
+            {/* Ingredients Grid - dynamically scaled */}
             <div>
-              <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-kitchen-amber mb-1.5">
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>Ingredients ({recipe.ingredients.length})</span>
+              <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-kitchen-amber mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>{t.ingredients} ({recipe.ingredients.length})</span>
+                </div>
+                {servings !== 4 && (
+                  <span className="text-[10px] text-kitchen-text-muted lowercase font-normal">
+                    (scaled for {servings})
+                  </span>
+                )}
               </div>
-              <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 gap-1 max-h-36 overflow-y-auto pr-1">
                 {recipe.ingredients.map((ing, idx) => (
                   <div
                     key={idx}
                     className="px-2.5 py-1 bg-kitchen-elevated border border-kitchen-border/60 rounded-md text-[11px] text-kitchen-text-secondary flex items-start gap-1.5"
                   >
                     <span className="text-kitchen-amber font-bold">•</span>
-                    <span>{ing}</span>
+                    <span className="font-medium text-kitchen-text-primary">{ing}</span>
                   </div>
                 ))}
               </div>
@@ -139,42 +201,51 @@ export const RecipeContextPanel: React.FC<RecipeContextPanelProps> = ({ onSelect
               <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-kitchen-cyan mb-1.5">
                 <div className="flex items-center gap-1.5">
                   <ListOrdered className="w-3.5 h-3.5" />
-                  <span>Click Any Step to Jump:</span>
+                  <span>{t.allSteps} ({recipe.steps.length})</span>
                 </div>
-                <span className="text-kitchen-amber font-bold">Active: Step {currentStep}</span>
+                <span className="text-[10px] text-kitchen-text-muted">Click step to jump</span>
               </div>
+
               <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                 {recipe.steps.map((step, idx) => {
                   const stepNum = idx + 1;
                   const isActive = stepNum === currentStep;
-                  const isDone = completedSteps.includes(stepNum) || stepNum < currentStep;
+                  const isDone = completedSteps.includes(stepNum);
 
                   return (
                     <button
-                      key={stepNum}
+                      key={idx}
                       type="button"
                       onClick={() => handleStepClick(stepNum)}
-                      aria-label={`Jump to Step ${stepNum}`}
-                      className={`w-full text-left p-2 rounded-xl border text-xs leading-relaxed transition-all flex items-start gap-2 active:scale-[0.99] ${
+                      aria-current={isActive ? 'step' : undefined}
+                      className={`w-full text-left p-2 rounded-xl border text-xs transition-all flex items-start gap-2 ${
                         isActive
-                          ? 'bg-kitchen-amber/15 border-kitchen-amber text-kitchen-text-primary shadow-sm font-medium'
+                          ? 'bg-kitchen-amber/15 border-kitchen-amber text-kitchen-text-primary shadow-sm font-semibold'
                           : isDone
-                          ? 'bg-kitchen-emerald/10 border-kitchen-emerald/40 text-kitchen-text-secondary hover:border-kitchen-emerald'
-                          : 'bg-kitchen-elevated border-kitchen-border/60 text-kitchen-text-muted hover:border-kitchen-border-strong hover:text-kitchen-text-secondary'
+                          ? 'bg-kitchen-surface border-kitchen-border/60 text-kitchen-text-muted hover:border-kitchen-border'
+                          : 'bg-kitchen-elevated border-kitchen-border/80 text-kitchen-text-secondary hover:border-kitchen-border'
                       }`}
                     >
-                      <span
-                        className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 ${
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
                           isActive
                             ? 'bg-kitchen-amber text-slate-950 shadow-sm'
                             : isDone
-                            ? 'bg-kitchen-emerald text-white'
-                            : 'bg-kitchen-surface text-kitchen-text-muted border border-kitchen-border'
+                            ? 'bg-kitchen-emerald/20 text-kitchen-emerald border border-kitchen-emerald/40'
+                            : 'bg-kitchen-border text-kitchen-text-muted'
                         }`}
                       >
-                        {isDone && !isActive ? <Check className="w-3 h-3 stroke-[2.5]" /> : stepNum}
-                      </span>
-                      <span className="flex-1">{step}</span>
+                        {isDone ? <Check className="w-3 h-3" /> : stepNum}
+                      </div>
+
+                      <div className="flex-1 leading-relaxed">
+                        <span className="block">{step}</span>
+                        {isActive && (
+                          <span className="inline-block mt-1 text-[10px] font-bold text-kitchen-amber uppercase tracking-wider">
+                            ● Active Step
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })}

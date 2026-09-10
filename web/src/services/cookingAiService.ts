@@ -45,7 +45,9 @@ export function detectAndExecuteStepNavigation(
     .replace(/\s+/g, ' ')
     .trim();
 
-  // 1. Advance to Next Step
+  const currentLang = useSousVoiceStore.getState().language || 'en';
+
+  // 1. Advance to Next Step (English, Hindi, Telugu)
   const isNext =
     cleanQ === 'next' ||
     cleanQ === 'next step' ||
@@ -80,14 +82,41 @@ export function detectAndExecuteStepNavigation(
     cleanQ.includes('ready for next') ||
     cleanQ.includes('done with this step') ||
     cleanQ.includes('finished this step') ||
-    cleanQ.includes('finished with this step');
+    cleanQ.includes('finished with this step') ||
+    // Hindi
+    cleanQ === 'अगला' ||
+    cleanQ === 'अगला स्टेप' ||
+    cleanQ === 'आगे बढ़ो' ||
+    cleanQ === 'आगे' ||
+    cleanQ === 'हो गया' ||
+    cleanQ === 'पूरा हो गया' ||
+    cleanQ === 'तैयार' ||
+    cleanQ.includes('अगला स्टेप') ||
+    cleanQ.includes('आगे क्या करना') ||
+    cleanQ.includes('हो गया') ||
+    // Telugu
+    cleanQ === 'తరువాత' ||
+    cleanQ === 'తరువాతి దశ' ||
+    cleanQ === 'ముందుకు' ||
+    cleanQ === 'పూర్తయింది' ||
+    cleanQ === 'అయిపోయింది' ||
+    cleanQ.includes('తరువాతి దశ') ||
+    cleanQ.includes('తరువాత ఏమిటి') ||
+    cleanQ.includes('పూర్తయింది');
 
   if (isNext) {
     if (currentStep >= total) {
+      const completionText =
+        currentLang === 'hi'
+          ? `आपने ${recipe.name} के सभी ${total} स्टेप्स पूरे कर लिए हैं! आपकी डिश परोसने के लिए तैयार है।`
+          : currentLang === 'te'
+          ? `మీరు ${recipe.name} యొక్క అన్ని ${total} దశలను పూర్తి చేశారు! మీ వంటకం సిద్ధంగా ఉంది.`
+          : `You have completed all ${total} steps of ${recipe.name}! Your dish is ready to serve. Enjoy your meal!`;
+
       return {
         isStepNav: true,
         newStep: total,
-        speechText: `You have completed all ${total} steps of ${recipe.name}! Your dish is ready to serve. Enjoy your meal!`,
+        speechText: completionText,
       };
     }
 
@@ -95,10 +124,17 @@ export function detectAndExecuteStepNavigation(
     useSousVoiceStore.getState().setCurrentStep(nextStep);
     useSousVoiceStore.getState().markStepCompleted(currentStep);
 
+    const nextText =
+      currentLang === 'hi'
+        ? `स्टेप ${nextStep}: ${recipe.steps[nextStep - 1]}`
+        : currentLang === 'te'
+        ? `దశ ${nextStep}: ${recipe.steps[nextStep - 1]}`
+        : `Moving to Step ${nextStep}: ${recipe.steps[nextStep - 1]}`;
+
     return {
       isStepNav: true,
       newStep: nextStep,
-      speechText: `Moving to Step ${nextStep}: ${recipe.steps[nextStep - 1]}`,
+      speechText: nextText,
     };
   }
 
@@ -111,35 +147,54 @@ export function detectAndExecuteStepNavigation(
     cleanQ === 'last step' ||
     cleanQ.includes('previous step') ||
     cleanQ.includes('go back a step') ||
-    cleanQ.includes('what was the previous step');
+    cleanQ.includes('what was the previous step') ||
+    // Hindi
+    cleanQ === 'पिछला' ||
+    cleanQ === 'पिछला स्टेप' ||
+    cleanQ === 'पीछे' ||
+    cleanQ.includes('पिछला स्टेप') ||
+    cleanQ.includes('पीछे जाओ') ||
+    // Telugu
+    cleanQ === 'మునుపటి' ||
+    cleanQ === 'మునుపటి దశ' ||
+    cleanQ === 'వెనుకకు' ||
+    cleanQ.includes('మునుపటి దశ') ||
+    cleanQ.includes('వెనుకకు వెళ్ళు');
 
   if (isPrev) {
     const prevStep = Math.max(1, currentStep - 1);
     useSousVoiceStore.getState().setCurrentStep(prevStep);
 
+    const prevText =
+      currentLang === 'hi'
+        ? `स्टेप ${prevStep} पर वापस जा रहे हैं: ${recipe.steps[prevStep - 1]}`
+        : currentLang === 'te'
+        ? `మునుపటి దశ ${prevStep}కి వెళ్తున్నాము: ${recipe.steps[prevStep - 1]}`
+        : `Going back to Step ${prevStep}: ${recipe.steps[prevStep - 1]}`;
+
     return {
       isStepNav: true,
       newStep: prevStep,
-      speechText: `Going back to Step ${prevStep}: ${recipe.steps[prevStep - 1]}`,
+      speechText: prevText,
     };
   }
 
   // 3. Jump to Specific Step (digits or words)
   const wordMap: Record<string, number> = {
-    one: 1, first: 1,
-    two: 2, second: 2,
-    three: 3, third: 3,
-    four: 4, fourth: 4,
-    five: 5, fifth: 5,
-    six: 6, sixth: 6,
-    seven: 7, seventh: 7,
-    eight: 8, eighth: 8,
-    nine: 9, ninth: 9,
-    ten: 10, tenth: 10,
+    one: 1, first: 1, एक: 1, पहला: 1, ఒకటి: 1, మొదటి: 1,
+    two: 2, second: 2, दो: 2, दूसरा: 2, రెండు: 2, రెండవ: 2,
+    three: 3, third: 3, तीन: 3, तीसरा: 3, మూడు: 3, మూడవ: 3,
+    four: 4, fourth: 4, चार: 4, चौथा: 4, నాలుగు: 4, నాల్గవ: 4,
+    five: 5, fifth: 5, पाँच: 5, پانچ: 5, पांचवा: 5, ఐదు: 5, ఐదవ: 5,
+    six: 6, sixth: 6, छह: 6, छठा: 6, ఆరు: 6, ఆరవ: 6,
+    seven: 7, seventh: 7, सात: 7, सातवां: 7, ఏడు: 7, ఏడవ: 7,
+    eight: 8, eighth: 8, आठ: 8, आठवां: 8, ఎనిమిది: 8, ఎనిమిదవ: 8,
+    nine: 9, ninth: 9, नौ: 9, नौवां: 9, తొమ్మిది: 9, తొమ్మిదవ: 9,
+    ten: 10, tenth: 10, दस: 10, दसवां: 10, పది: 10, పదవ: 10,
   };
 
   let target: number | null = null;
-  const digitMatch = cleanQ.match(/\b(?:step|go to step|jump to step|move to step)\s*([1-9]|10)\b/i);
+  const digitMatch = cleanQ.match(/\b(?:step|स्टेप|దశ|go to step|jump to step|move to step)\s*([1-9]|10)\b/i);
   if (digitMatch && digitMatch[1]) {
     target = parseInt(digitMatch[1], 10);
   } else {
@@ -151,7 +206,11 @@ export function detectAndExecuteStepNavigation(
         cleanQ.includes(`jump to step ${w}`) ||
         cleanQ.includes(`move to step ${w}`) ||
         cleanQ === `${w} step` ||
-        cleanQ.includes(`the ${w} step`)
+        cleanQ.includes(`the ${w} step`) ||
+        cleanQ === `स्टेप ${w}` ||
+        cleanQ.includes(`स्टेप ${w}`) ||
+        cleanQ === `దశ ${w}` ||
+        cleanQ.includes(`దశ ${w}`)
       ) {
         target = n;
         break;
@@ -161,10 +220,17 @@ export function detectAndExecuteStepNavigation(
 
   if (target !== null && target >= 1 && target <= total) {
     useSousVoiceStore.getState().setCurrentStep(target);
+    const jumpText =
+      currentLang === 'hi'
+        ? `स्टेप ${target}: ${recipe.steps[target - 1]}`
+        : currentLang === 'te'
+        ? `దశ ${target}: ${recipe.steps[target - 1]}`
+        : `Step ${target}: ${recipe.steps[target - 1]}`;
+
     return {
       isStepNav: true,
       newStep: target,
-      speechText: `Step ${target}: ${recipe.steps[target - 1]}`,
+      speechText: jumpText,
     };
   }
 
@@ -181,13 +247,31 @@ export function detectAndExecuteStepNavigation(
     cleanQ.includes('what step are we on') ||
     cleanQ.includes('what is the current step') ||
     cleanQ.includes('what am i doing now') ||
-    cleanQ.includes('where are we');
+    cleanQ.includes('where are we') ||
+    // Hindi
+    cleanQ === 'दोबारा' ||
+    cleanQ === 'फिर से बोलो' ||
+    cleanQ === 'फिर से बताओ' ||
+    cleanQ.includes('दोबारा बोलो') ||
+    cleanQ.includes('फिर से') ||
+    // Telugu
+    cleanQ === 'మళ్ళీ చెప్పండి' ||
+    cleanQ === 'మరోసారి' ||
+    cleanQ.includes('మళ్ళీ చెప్పండి') ||
+    cleanQ.includes('మరోసారి చెప్పండి');
 
   if (isRepeat) {
+    const repeatText =
+      currentLang === 'hi'
+        ? `स्टेप ${currentStep}: ${recipe.steps[currentStep - 1] || recipe.steps[0]}`
+        : currentLang === 'te'
+        ? `దశ ${currentStep}: ${recipe.steps[currentStep - 1] || recipe.steps[0]}`
+        : `Step ${currentStep}: ${recipe.steps[currentStep - 1] || recipe.steps[0]}`;
+
     return {
       isStepNav: true,
       newStep: currentStep,
-      speechText: `Step ${currentStep}: ${recipe.steps[currentStep - 1] || recipe.steps[0]}`,
+      speechText: repeatText,
     };
   }
 
@@ -294,6 +378,14 @@ async function callOpenAi(
   const timeoutId = setTimeout(() => controller.abort(), 6000);
 
   try {
+    const lang = useSousVoiceStore.getState().language || 'en';
+    const langInstruction =
+      lang === 'hi'
+        ? 'IMPORTANT: You MUST reply entirely in natural, fluent, conversational Hindi (हिंदी). Use clear, authentic culinary Hindi without robot jargon.'
+        : lang === 'te'
+        ? 'IMPORTANT: You MUST reply entirely in natural, fluent, conversational Telugu (తెలుగు). Use clear, authentic culinary Telugu without robot jargon.'
+        : 'Reply in natural, encouraging English suitable for spoken audio.';
+
     const recentMessages = history.slice(-6).map((m) => ({
       role: m.speaker === 'cook' ? 'user' : 'assistant',
       content: m.text,
@@ -304,12 +396,14 @@ Active step: Step ${currentStepIndex} ("${recipe.steps[currentStepIndex - 1] || 
 Ingredients: ${recipe.ingredients.join(', ')}.
 Substitutions: ${JSON.stringify(recipe.substitutions || {})}.
 Quantities: ${JSON.stringify(recipe.quantities || {})}.
+Target Language: ${lang.toUpperCase()}.
 
 Instructions:
-1. Answer the cook's question concisely in 2 to 3 sentences suitable for speech output.
-2. Resolve pronouns like "it", "this", "that" to the ingredient or step previously discussed.
-3. If answering a substitution, equipment question, or troubleshooting question, end with a brief bridge back to the current step (e.g. "...so you're all set—let me know when you're ready for step ${currentStepIndex}.").
-4. Do not invent steps or ingredients not in the recipe. Speak in a friendly, culinary-expert tone.`;
+1. ${langInstruction}
+2. Answer the cook's question concisely in 2 to 3 sentences suitable for speech output.
+3. Resolve pronouns like "it", "this", "that" to the ingredient or step previously discussed.
+4. If answering a substitution, equipment question, or troubleshooting question, end with a brief bridge back to the current step.
+5. Do not invent steps or ingredients not in the recipe. Speak in a friendly, culinary-expert tone.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -351,6 +445,7 @@ function generateLocalContextualAnswer(
   recipe: Recipe,
   currentStepIndex: number
 ): string {
+  const lang = useSousVoiceStore.getState().language || 'en';
   const q = userQuestion.toLowerCase().trim();
   const rName = recipe.name;
   const steps = recipe.steps;
@@ -362,7 +457,13 @@ function generateLocalContextualAnswer(
   const lastAgentMsg = [...history].reverse().find((m) => m.speaker === 'agent')?.text.toLowerCase() || '';
 
   // 0. EXPLICIT STOP / WAIT / PAUSE COMMANDS
-  if (isHaltCommand(userQuestion)) {
+  if (isHaltCommand(userQuestion) || q.includes('रुको') || q.includes('आगండి')) {
+    if (lang === 'hi') {
+      return `बिल्कुल, यहीं रुक रहे हैं! आप आराम से करें, मैंने ऑडियो रोक दिया है। जब आप तैयार हों तो 'अगला स्टेप' कहें।`;
+    }
+    if (lang === 'te') {
+      return `తప్పకుండా, ఇక్కడే ఆగుతున్నాను! ఆడియో ఆపబడింది. మీరు సిద్ధంగా ఉన్నప్పుడు 'తరువాతి దశ' అని చెప్పండి.`;
+    }
     return `Stopping right there! Take your time, I'm paused. Let me know when you're ready or ask any question.`;
   }
 
@@ -611,5 +712,11 @@ function generateLocalContextualAnswer(
   }
 
   // 13. FRIENDLY INFORMATIVE DEFAULT (Tailored to active step, NO generic robot script)
+  if (lang === 'hi') {
+    return `स्टेप ${activeStepNum} के लिए निर्देश: "${activeStepText}"। किसी भी सामग्री, मात्रा या समय के बारे में पूछें, या तैयार होने पर 'अगला स्टेप' कहें!`;
+  }
+  if (lang === 'te') {
+    return `దశ ${activeStepNum} సూచన: "${activeStepText}"। పదార్థాల కొలతలు లేదా సమయం గురించి ఏదైనా అడగండి, లేదా సిద్ధంగా ఉన్నప్పుడు 'తరువాతి దశ' అని చెప్పండి!`;
+  }
   return `For Step ${activeStepNum} of ${rName}, the goal is: "${activeStepText}". Ask me about any ingredient, substitution, cooking time, or say 'next step' whenever you're ready!`;
 }

@@ -1,4 +1,6 @@
-﻿// speechService.ts: Enhanced Hands-Free Microphone, Echo Cancellation, and Speech Synthesis
+﻿// speechService.ts: Enhanced Hands-Free Microphone, Multilingual Speech Recognition & Synthesis
+
+import type { SupportedLanguage } from './localization';
 
 let activeUtterance: SpeechSynthesisUtterance | null = null;
 let audioContext: AudioContext | null = null;
@@ -13,9 +15,19 @@ let lastSpokenNormalized = '';
 let speechEndedTimestamp = 0;
 let lastEmittedCleanText = '';
 let lastEmittedTime = 0;
+let currentActiveLanguage: SupportedLanguage = 'en';
 
 export const isSpeakingOutLoud = (): boolean => {
   return activeUtterance !== null;
+};
+
+export const setSpeechServiceLanguage = (lang: SupportedLanguage) => {
+  currentActiveLanguage = lang;
+  if (recognitionInstance) {
+    try {
+      recognitionInstance.lang = lang === 'hi' ? 'hi-IN' : lang === 'te' ? 'te-IN' : 'en-US';
+    } catch {}
+  }
 };
 
 /**
@@ -26,14 +38,19 @@ export const isEchoOfAssistant = (incomingText: string): boolean => {
   const clean = incomingText.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
   if (!clean || clean.length < 2) return true;
 
-  // Genuine cook question or command starters are never filtered as echo
+  // Genuine cook question or command starters across English, Hindi, and Telugu
   const userStarters = [
+    // English
     'wait', 'stop', 'hold', 'pause', 'hang on',
     'how', 'what', 'why', 'when', 'where', 'which', 'who',
     'can', 'could', 'should', 'would', 'will',
     'is', 'are', 'do', 'does', 'did', 'have', 'has',
     'tell', 'repeat', 'read', 'explain', 'substitute', 'replace', 'instead',
-    'next', 'back', 'step', 'done', 'finished', 'ready'
+    'next', 'back', 'step', 'done', 'finished', 'ready',
+    // Hindi
+    'रुक', 'रुको', 'रुको!', 'ठहरो', 'अगला', 'आगे', 'स्टेप', 'क्या', 'कैसे', 'कितना', 'कितनी', 'नमक', 'मिर्च', 'हो गया', 'तैयार',
+    // Telugu
+    'ఆగు', 'ఆగండి', 'ఆగండి!', 'తరువాత', 'ముందుకు', 'దశ', 'ఏంటి', 'ఎలా', 'ఎంత', 'ఉప్పు', 'కారం', 'పూర్తయింది', 'సిద్ధం'
   ];
 
   for (const starter of userStarters) {
@@ -46,7 +63,7 @@ export const isEchoOfAssistant = (incomingText: string): boolean => {
   const isRecentSpeech = isSpeakingOutLoud() || Date.now() - speechEndedTimestamp < 1200;
   if (!isRecentSpeech || !lastSpokenNormalized) return false;
 
-  // If the incoming text is fully inside the spoken text:
+  // If incoming text is inside the spoken text:
   if (lastSpokenNormalized.includes(clean)) {
     return true;
   }
@@ -71,19 +88,26 @@ export const isEchoOfAssistant = (incomingText: string): boolean => {
  * Validate that speech contains genuine, intentional words rather than noise or single syllables.
  */
 const isMeaningfulSpeech = (text: string): boolean => {
-  const clean = text.toLowerCase().replace(/[^\w\s]/g, '').trim();
-  if (!clean || clean.length < 4) return false;
+  const clean = text.trim();
+  if (!clean || clean.length < 3) return false;
 
-  // Check for common command words
-  const quickCommands = ['next', 'stop', 'wait', 'done', 'back', 'pause', 'repeat', 'ready'];
-  if (quickCommands.includes(clean)) return true;
+  // Quick commands in all supported languages
+  const quickCommands = [
+    'next', 'stop', 'wait', 'done', 'back', 'pause', 'repeat', 'ready',
+    'रुको', 'अगला', 'आगे', 'हो गया', 'रुकिए',
+    'ఆగు', 'ఆగండి', 'తరువాత', 'పూర్తయింది'
+  ];
+  if (quickCommands.includes(clean.toLowerCase())) return true;
 
-  const words = clean.split(/\s+/).filter(w => w.length >= 2);
-  // Must have at least 2 distinct words, or a minimum length of 10 characters with real words
-  return words.length >= 2 || (words.length >= 1 && clean.length >= 10);
+  const words = clean.split(/\s+/).filter((w) => w.length >= 1);
+  return words.length >= 2 || (words.length >= 1 && clean.length >= 6);
 };
 
-export const speakText = (text: string, onEnd?: () => void): void => {
+export const speakText = (
+  text: string,
+  onEnd?: () => void,
+  language: SupportedLanguage = currentActiveLanguage
+): void => {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     onEnd?.();
     return;
@@ -97,23 +121,17 @@ export const speakText = (text: string, onEnd?: () => void): void => {
   lastSpokenNormalized = text.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 1.05;
+  utterance.rate = language === 'hi' || language === 'te' ? 0.95 : 1.05;
   utterance.pitch = 1.0;
-  utterance.lang = 'en-US';
+
+  const targetLocale = language === 'hi' ? 'hi-IN' : language === 'te' ? 'te-IN' : 'en-US';
+  utterance.lang = targetLocale;
 
   const voices = window.speechSynthesis.getVoices();
+  // Find high quality voice matching the selected language locale
   const preferredVoice =
-    voices.find(
-      (v) =>
-        (v.name.includes('Natural') ||
-          v.name.includes('Neural') ||
-          v.name.includes('Google') ||
-          v.name.includes('Samantha') ||
-          v.name.includes('Jenny') ||
-          v.name.includes('Ava') ||
-          v.name.includes('Guy')) &&
-        v.lang.startsWith('en')
-    ) || voices.find((v) => v.lang.startsWith('en'));
+    voices.find((v) => v.lang.toLowerCase().replace('_', '-').startsWith(language === 'hi' ? 'hi' : language === 'te' ? 'te' : 'en')) ||
+    voices.find((v) => v.lang.startsWith(language));
 
   if (preferredVoice) {
     utterance.voice = preferredVoice;
@@ -152,8 +170,10 @@ export const cancelSpeech = (): void => {
 export const startMicrophone = async (
   onVolume: (level: number) => void,
   onSpeechRecognized?: (text: string) => void,
-  onSpeechInterim?: (interim: string) => void
+  onSpeechInterim?: (interim: string) => void,
+  language: SupportedLanguage = currentActiveLanguage
 ): Promise<boolean> => {
+  currentActiveLanguage = language;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -197,7 +217,7 @@ export const startMicrophone = async (
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = language === 'hi' ? 'hi-IN' : language === 'te' ? 'te-IN' : 'en-US';
       recognition.maxAlternatives = 1;
 
       recognition.onresult = (event: any) => {
@@ -219,7 +239,6 @@ export const startMicrophone = async (
             interimTranscriptAccumulator = trimmedInterim;
             onSpeechInterim(trimmedInterim);
 
-            // AUTO-COMMIT: Only if meaningful speech, assistant is silent, and user pauses
             if (!isSpeakingOutLoud() && isMeaningfulSpeech(trimmedInterim)) {
               if (silenceTimer) clearTimeout(silenceTimer);
               silenceTimer = setTimeout(() => {
@@ -243,7 +262,6 @@ export const startMicrophone = async (
           if (silenceTimer) clearTimeout(silenceTimer);
           interimTranscriptAccumulator = '';
 
-          // Discard echo and non-meaningful noise bursts
           if (!isEchoOfAssistant(trimmedFinal) && isMeaningfulSpeech(trimmedFinal)) {
             const now = Date.now();
             if (trimmedFinal.toLowerCase() !== lastEmittedCleanText || now - lastEmittedTime > 1500) {

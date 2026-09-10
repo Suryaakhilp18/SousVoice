@@ -123,9 +123,15 @@ export const startMockSession = async (): Promise<void> => {
       }
     );
 
-    // Initial Greeting & Step 1 based on currently loaded recipe
+    // Initial Greeting & Step 1 based on currently loaded recipe and language
     const gen = ++currentGen;
-    const greetingText = `Welcome to SousVoice! We're making ${currentRecipe.name} for ${currentRecipe.servings} servings. Step 1: ${currentRecipe.steps[0]}`;
+    const lang = store.language || 'en';
+    const greetingText =
+      lang === 'hi'
+        ? `सॉस-वॉइस में आपका स्वागत है! हम ${currentRecipe.servings} लोगों के लिए ${currentRecipe.name} बना रहे हैं। स्टेप 1: ${currentRecipe.steps[0]}`
+        : lang === 'te'
+        ? `సాస్‌వాయిస్‌కి స్వాగతం! మనం ${currentRecipe.servings} మంది కోసం ${currentRecipe.name} తయారుచేస్తున్నాము. దశ 1: ${currentRecipe.steps[0]}`
+        : `Welcome to SousVoice! We're making ${currentRecipe.name} for ${currentRecipe.servings} servings. Step 1: ${currentRecipe.steps[0]}`;
 
     store.setVoiceState('speaking');
     store.addTranscriptMessage({
@@ -142,7 +148,7 @@ export const startMockSession = async (): Promise<void> => {
         useSousVoiceStore.getState().setVoiceState('listening');
         processNextQueuedQuestion();
       }
-    });
+    }, lang);
   }, 400);
 
   activeTimers.push(connectTimer);
@@ -323,7 +329,7 @@ async function executeAnswerGeneration(text: string, gen: number, wasInterrupted
         // Check FIFO queue for next question
         processNextQueuedQuestion();
       }
-    });
+    }, store.language || 'en');
   } catch (err) {
     console.error('Cooking AI error:', err);
     isProcessingAnswer = false;

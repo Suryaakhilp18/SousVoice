@@ -2,6 +2,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AgentVoiceState } from '../types';
 import { Ear, Loader2, Volume2, ZapOff, Mic } from 'lucide-react';
+import { useSousVoiceStore } from '../store/useSousVoiceStore';
+import { getTranslation } from '../services/localization';
 
 interface VoiceOrbVisualizerProps {
   state: AgentVoiceState;
@@ -12,6 +14,9 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
   state,
   micLevel = 0,
 }) => {
+  const { language } = useSousVoiceStore();
+  const t = getTranslation(language);
+
   const isSpeaking = state === 'speaking';
   const isInterrupted = state === 'interrupted';
   const isThinking = state === 'thinking';
@@ -21,8 +26,8 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
     switch (state) {
       case 'user-speaking':
         return {
-          title: 'Hearing You...',
-          subtitle: 'Cook speaking hands-free',
+          title: t.hearingYou,
+          subtitle: t.hearingYouSubtitle,
           color: 'var(--color-amber)',
           glowColor: 'rgba(245,158,11,0.22)',
           icon: <Mic className="w-8 h-8 text-black" />,
@@ -30,8 +35,8 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
         };
       case 'thinking':
         return {
-          title: 'Thinking...',
-          subtitle: 'Processing your question',
+          title: t.thinking,
+          subtitle: t.thinkingSubtitle,
           color: 'var(--color-amber)',
           glowColor: 'rgba(245,158,11,0.22)',
           icon: <Loader2 className="w-8 h-8 text-black animate-spin" />,
@@ -39,8 +44,8 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
         };
       case 'speaking':
         return {
-          title: 'Speaking (Rime TTS)',
-          subtitle: 'You can interrupt me anytime',
+          title: t.speaking,
+          subtitle: t.speakingSubtitle,
           color: 'var(--color-terracotta)',
           glowColor: 'rgba(220,90,60,0.25)',
           icon: <Volume2 className="w-8 h-8 text-white" />,
@@ -48,8 +53,8 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
         };
       case 'interrupted':
         return {
-          title: 'Interrupted!',
-          subtitle: 'Barge-in detected — cancelling audio',
+          title: t.interruptedTitle,
+          subtitle: t.interruptedSubtitle,
           color: 'var(--color-crimson)',
           glowColor: 'rgba(220,38,38,0.22)',
           icon: <ZapOff className="w-8 h-8 text-white animate-bounce" />,
@@ -59,8 +64,8 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
       case 'idle':
       default:
         return {
-          title: 'Voice Ready',
-          subtitle: 'Speak naturally or use text box',
+          title: t.voiceReady,
+          subtitle: t.voiceReadySubtitle,
           color: 'var(--color-emerald)',
           glowColor: 'rgba(16,185,129,0.18)',
           icon: <Ear className="w-8 h-8 text-black" />,
