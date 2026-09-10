@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AgentVoiceState } from '../types';
 import { Ear, Loader2, Volume2, ZapOff, Mic } from 'lucide-react';
@@ -49,7 +49,12 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
           color: 'var(--color-terracotta)',
           glowColor: 'rgba(220,90,60,0.25)',
           icon: <Volume2 className="w-8 h-8 text-white" />,
-          statusText: 'RIME TTS ACTIVE',
+          statusText:
+            language === 'te'
+              ? 'TELUGU VOICE ACTIVE'
+              : language === 'hi'
+              ? 'HINDI VOICE ACTIVE'
+              : 'RIME TTS ACTIVE',
         };
       case 'interrupted':
         return {
@@ -127,7 +132,11 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: 'var(--color-terracotta)' }} />
                 </span>
                 <span className="text-[11px] font-extrabold tracking-wider uppercase text-kitchen-terracotta truncate">
-                  Rime TTS Live
+                  {language === 'te'
+                    ? 'Telugu Voice Live'
+                    : language === 'hi'
+                    ? 'Hindi Voice Live'
+                    : 'Rime TTS Live'}
                 </span>
               </div>
               <div className="flex items-end gap-[3px] h-4 flex-shrink-0">

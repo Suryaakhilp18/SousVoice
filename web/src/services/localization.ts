@@ -1,4 +1,4 @@
-﻿// localization.ts - Comprehensive Natural Localization for English, Hindi, and Telugu
+// localization.ts - Comprehensive Natural Localization for English, Hindi, and Telugu
 
 export type SupportedLanguage = 'en' | 'hi' | 'te';
 
@@ -118,6 +118,9 @@ export const UI_TRANSLATIONS = {
     voiceReady: 'Voice Ready',
     voiceReadySubtitle: 'Speak naturally or use text box',
     scaleNotice: 'Servings scaled to',
+    connectingTitle: 'Connecting to SousVoice...',
+    connectingSubtitle: 'Initializing voice pipeline, audio transport, and voice channels.',
+    cancelConnection: 'Cancel Connection',
   },
   hi: {
     appName: 'सॉस-वॉइस (SousVoice)',
@@ -202,6 +205,9 @@ export const UI_TRANSLATIONS = {
     voiceReady: 'आवाज़ तैयार है',
     voiceReadySubtitle: 'स्वाभाविक रूप से बोलें या टेक्स्ट बॉक्स का उपयोग करें',
     scaleNotice: 'मात्रा बदली गई',
+    connectingTitle: 'सॉस-वॉइस से कनेक्ट हो रहा है...',
+    connectingSubtitle: 'वॉइस पाइपलाइन और ऑडियो चैनल प्रारंभ किए जा रहे हैं।',
+    cancelConnection: 'कनेक्शन रद्द करें',
   },
   te: {
     appName: 'సాస్‌వాయిస్ (SousVoice)',
@@ -286,6 +292,9 @@ export const UI_TRANSLATIONS = {
     voiceReady: 'వాయిస్ సిద్ధం',
     voiceReadySubtitle: 'సహజంగా మాట్లాడండి లేదా టైప్ చేయండి',
     scaleNotice: 'కొలతలు మార్చబడ్డాయి',
+    connectingTitle: 'సాస్‌వాయిస్‌కు కనెక్ట్ అవుతోంది...',
+    connectingSubtitle: 'వాయిస్ పైప్‌లైన్ మరియు ఆడియో ఛానెల్‌లను సిద్ధం చేస్తోంది.',
+    cancelConnection: 'రద్దు చేయండి',
   },
 };
 

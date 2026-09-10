@@ -256,7 +256,81 @@ async function runInteractionVerification() {
     throw new Error('recipe.quantities not scaled down properly for 2 servings');
   }
 
-  console.log('--- ALL MULTI-RECIPE, CONTEXTUAL AI, STEP PROGRESSION, BARGE-IN & FIFO QUEUE CHECKS PASSED (100% VERIFIED) ---');
+  // 12. Test Telugu Language Selection: Recipe Localization, Voice STT regex, and Telugu AI Answers
+  console.log('[Step 14] Testing Telugu (te) Multilingual Pipeline...');
+  const { setLanguage } = useSousVoiceStore.getState();
+  setLanguage('te');
+
+  const teRecipe = useSousVoiceStore.getState().recipe;
+  console.log(`[Step 14] Telugu Recipe Name: "${teRecipe.name}"`);
+  console.log(`[Step 14] Telugu Step 1: "${teRecipe.steps[0]?.slice(0, 50)}..."`);
+  console.log(`[Step 14] Telugu Ingredient 1: "${teRecipe.ingredients[0]}"`);
+
+  if (!teRecipe.name.includes('బిర్యానీ')) {
+    throw new Error('Telugu recipe name was not localized');
+  }
+  if (!teRecipe.steps[0].includes('చికెన్') && !teRecipe.steps[0].includes('నాననివ్వండి')) {
+    throw new Error('Telugu recipe step 1 was not localized');
+  }
+
+  // Test Telugu AI Answer
+  console.log('[Step 14] Asking Telugu Question: "ఉప్పు ఎంత వేయాలి?"');
+  handleCookMessage('ఉప్పు ఎంత వేయాలి?');
+  await new Promise((r) => setTimeout(r, 600));
+  const teSaltReply = useSousVoiceStore.getState().transcript.slice(-1)[0]?.text;
+  console.log(`[Step 14] Telugu AI Response: "${teSaltReply}"`);
+  if (!teSaltReply.includes('ఉప్పు') && !teSaltReply.includes('స్పూన్')) {
+    throw new Error('Telugu AI did not answer in natural Telugu for salt query');
+  }
+
+  // Test Telugu Step Navigation
+  console.log('[Step 14] Cook says Telugu command: "తరువాతి దశ"');
+  const stepBeforeTe = useSousVoiceStore.getState().currentStep;
+  handleCookMessage('తరువాతి దశ');
+  await new Promise((r) => setTimeout(r, 600));
+  const stepAfterTe = useSousVoiceStore.getState().currentStep;
+  const teNavReply = useSousVoiceStore.getState().transcript.slice(-1)[0]?.text;
+  console.log(`[Step 14] Step advanced from ${stepBeforeTe} to ${stepAfterTe} with: "${teNavReply?.slice(0, 40)}"`);
+  if (stepAfterTe <= stepBeforeTe) {
+    throw new Error('Telugu step navigation failed to advance step');
+  }
+
+  // 13. Test Hindi Language Selection: Recipe Localization, Voice STT regex, and Hindi AI Answers
+  console.log('[Step 15] Testing Hindi (hi) Multilingual Pipeline...');
+  setLanguage('hi');
+
+  const hiRecipe = useSousVoiceStore.getState().recipe;
+  console.log(`[Step 15] Hindi Recipe Name: "${hiRecipe.name}"`);
+  console.log(`[Step 15] Hindi Step 1: "${hiRecipe.steps[0]?.slice(0, 50)}..."`);
+
+  if (!hiRecipe.name.includes('बिरयानी')) {
+    throw new Error('Hindi recipe name was not localized');
+  }
+  if (!hiRecipe.steps[0].includes('चिकन') && !hiRecipe.steps[0].includes('मैरीनेट')) {
+    throw new Error('Hindi recipe step 1 was not localized');
+  }
+
+  // Test Hindi AI Answer
+  console.log('[Step 15] Asking Hindi Question: "कितना नमक डालना है?"');
+  handleCookMessage('कितना नमक डालना है?');
+  await new Promise((r) => setTimeout(r, 600));
+  const hiSaltReply = useSousVoiceStore.getState().transcript.slice(-1)[0]?.text;
+  console.log(`[Step 15] Hindi AI Response: "${hiSaltReply}"`);
+  if (!hiSaltReply.includes('नमक') && !hiSaltReply.includes('चम्मच')) {
+    throw new Error('Hindi AI did not answer in natural Hindi for salt query');
+  }
+
+  // 14. Test Indic Unicode Echo Filtering (SpeechRecognition STT fix)
+  console.log('[Step 16] Verifying Indic Unicode speech filtering in speechService...');
+  const { isEchoOfAssistant } = await import('./src/services/speechService.ts');
+  const isTeluguEcho = isEchoOfAssistant('ఉప్పు ఎంత వేయాలి?');
+  const isHindiEcho = isEchoOfAssistant('कितना नमक डालना है?');
+  console.log(`[Step 16] Telugu query treated as echo: ${isTeluguEcho} (Expected: false)`);
+  console.log(`[Step 16] Hindi query treated as echo: ${isHindiEcho} (Expected: false)`);
+  if (isTeluguEcho) throw new Error('Telugu query incorrectly rejected as echo');
+  if (isHindiEcho) throw new Error('Hindi query incorrectly rejected as echo');
+
+  console.log('--- ALL MULTI-RECIPE, MULTILINGUAL (EN/HI/TE), CONTEXTUAL AI, STEP PROGRESSION, BARGE-IN & FIFO QUEUE CHECKS PASSED (100% VERIFIED) ---');
 }
 
 runInteractionVerification()

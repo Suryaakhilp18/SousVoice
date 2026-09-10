@@ -1,12 +1,17 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChefHat } from 'lucide-react';
+import { useSousVoiceStore } from '../store/useSousVoiceStore';
+import { getTranslation } from '../services/localization';
 
 interface ConnectingScreenProps {
   onCancel: () => void;
 }
 
 export const ConnectingScreen: React.FC<ConnectingScreenProps> = ({ onCancel }) => {
+  const { language } = useSousVoiceStore();
+  const t = getTranslation(language);
+
   return (
     <div
       className="flex flex-col items-center justify-center flex-1 w-full max-w-md mx-auto py-12 px-4 text-center gap-6"
@@ -32,10 +37,10 @@ export const ConnectingScreen: React.FC<ConnectingScreenProps> = ({ onCancel }) 
 
       <div>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-kitchen-text-primary tracking-tight">
-          Connecting to SousVoice...
+          {(t as any).connectingTitle || 'Connecting to SousVoice...'}
         </h2>
         <p className="text-sm sm:text-base text-kitchen-text-secondary mt-1.5 max-w-xs mx-auto">
-          Initializing voice pipeline, audio transport, and Rime TTS channels.
+          {(t as any).connectingSubtitle || 'Initializing voice pipeline, audio transport, and voice channels.'}
         </p>
       </div>
 
@@ -44,7 +49,7 @@ export const ConnectingScreen: React.FC<ConnectingScreenProps> = ({ onCancel }) 
         onClick={onCancel}
         className="px-6 py-2.5 rounded-full text-sm font-bold text-kitchen-text-muted hover:text-kitchen-text-primary bg-kitchen-surface border border-kitchen-border hover:border-kitchen-border-strong transition-all mt-4"
       >
-        Cancel Connection
+        {(t as any).cancelConnection || 'Cancel Connection'}
       </button>
     </div>
   );

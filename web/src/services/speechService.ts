@@ -25,17 +25,27 @@ export const setSpeechServiceLanguage = (lang: SupportedLanguage) => {
   currentActiveLanguage = lang;
   if (recognitionInstance) {
     try {
-      recognitionInstance.lang = lang === 'hi' ? 'hi-IN' : lang === 'te' ? 'te-IN' : 'en-US';
-    } catch {}
+      const targetLang = lang === 'hi' ? 'hi-IN' : lang === 'te' ? 'te-IN' : 'en-US';
+      recognitionInstance.lang = targetLang;
+      // Aborting cleanly restarts via onend with the updated language model
+      recognitionInstance.abort();
+    } catch (e) {
+      console.warn('SpeechRecognition language switch notice:', e);
+    }
   }
 };
 
 /**
  * Filter out acoustic echo when the assistant's own voice comes out of the device
  * speakers and is picked up by the microphone.
+ * Uses Unicode-aware matching (\p{L}\p{M}\p{N}) to preserve Indic characters (Hindi, Telugu).
  */
 export const isEchoOfAssistant = (incomingText: string): boolean => {
-  const clean = incomingText.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const clean = incomingText
+    .toLowerCase()
+    .replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   if (!clean || clean.length < 2) return true;
 
   // Genuine cook question or command starters across English, Hindi, and Telugu
@@ -50,7 +60,7 @@ export const isEchoOfAssistant = (incomingText: string): boolean => {
     // Hindi
     'रुक', 'रुको', 'रुको!', 'ठहरो', 'अगला', 'आगे', 'स्टेप', 'क्या', 'कैसे', 'कितना', 'कितनी', 'नमक', 'मिर्च', 'हो गया', 'तैयार',
     // Telugu
-    'ఆగు', 'ఆగండి', 'ఆగండి!', 'తరువాత', 'ముందుకు', 'దశ', 'ఏంటి', 'ఎలా', 'ఎంత', 'ఉప్పు', 'కారం', 'పూర్తయింది', 'సిద్ధం'
+    'ఆగు', 'ఆగండి', 'ఆగండి!', 'తరువాత', 'ముందుకు', 'దశ', 'ఏంటి', 'ఎలా', 'ఎంత', 'ఉప్పు', 'కారం', 'పూర్తయింది', 'సిద్ధం', 'చెప్పు'
   ];
 
   for (const starter of userStarters) {
@@ -96,13 +106,13 @@ const NOISE_FILLERS = new Set([
  */
 const isMeaningfulSpeech = (text: string): boolean => {
   const clean = text.trim().toLowerCase();
-  if (!clean || clean.length < 3) return false;
+  if (!clean || clean.length < 2) return false;
 
   // Quick commands in all supported languages
   const quickCommands = [
     'next', 'stop', 'wait', 'done', 'back', 'pause', 'repeat', 'ready',
-    'रुको', 'अगला', 'आगे', 'हो गया', 'रुकिए',
-    'ఆగు', 'ఆగండి', 'తరువాత', 'పూర్తయింది'
+    'रुको', 'अगला', 'आगे', 'हो गया', 'रुकिए', 'वापस', 'दोहराओ', 'तैयार', 'नमक',
+    'ఆగు', 'ఆగండి', 'తరువాత', 'పూర్తయింది', 'వెనుకకు', 'మళ్లీ', 'సిద్ధం', 'చెప్పు', 'ఉప్పు'
   ];
   if (quickCommands.includes(clean)) return true;
 
@@ -120,8 +130,8 @@ const isMeaningfulSpeech = (text: string): boolean => {
     return false;
   }
 
-  // Must have at least 2 distinct words OR be a recognized multi-syllable word (>=6 chars) not in filler list
-  return words.length >= 2 || (words.length === 1 && clean.length >= 6);
+  // Must have at least 2 distinct words OR be a recognized multi-syllable word (>=4 chars) not in filler list
+  return words.length >= 2 || (words.length === 1 && clean.length >= 4);
 };
 
 export const speakText = (
@@ -139,7 +149,11 @@ export const speakText = (
     window.speechSynthesis.resume();
   } catch {}
 
-  lastSpokenNormalized = text.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  lastSpokenNormalized = text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.rate = language === 'hi' || language === 'te' ? 0.95 : 1.05;
@@ -302,6 +316,12 @@ export const startMicrophone = async (
       recognition.onend = () => {
         if (micStream && micStream.active) {
           try {
+            recognition.lang =
+              currentActiveLanguage === 'hi'
+                ? 'hi-IN'
+                : currentActiveLanguage === 'te'
+                ? 'te-IN'
+                : 'en-US';
             recognition.start();
           } catch {}
         }

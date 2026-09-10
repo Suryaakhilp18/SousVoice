@@ -3,6 +3,8 @@ import type { AgentVoiceState, AppError, AppScreen, Recipe, SessionStats, ThemeM
 import { RECIPE_DATA } from '../data/recipe';
 import type { SupportedLanguage } from '../services/localization';
 import { scaleIngredientText, scaleStepText, calculateScaledTime } from '../services/ingredientScaler';
+import { getLocalizedRecipe } from '../services/recipeLocalization';
+import { setSpeechServiceLanguage } from '../services/speechService';
 
 interface SousVoiceState {
   screen: AppScreen;
@@ -67,33 +69,34 @@ const getInitialLanguage = (): SupportedLanguage => {
 };
 
 /**
- * Derives a scaled recipe view from the original base recipe without mutating the original.
+ * Derives a scaled, localized recipe view from the original base recipe without mutating the original.
  */
-function deriveScaledRecipe(base: Recipe, targetServings: number): Recipe {
-  const baseServings = base.servings || 4;
+function deriveScaledRecipe(base: Recipe, targetServings: number, lang: SupportedLanguage = 'en'): Recipe {
+  const localizedBase = getLocalizedRecipe(base, lang);
+  const baseServings = localizedBase.servings || 4;
   const safeTarget = Math.max(0, isNaN(targetServings) ? baseServings : targetServings);
 
-  const scaledIngredients = base.ingredients.map((ing) =>
+  const scaledIngredients = localizedBase.ingredients.map((ing) =>
     scaleIngredientText(ing, safeTarget, baseServings)
   );
 
   const scaledQuantities: Record<string, string> = {};
-  if (base.quantities) {
-    for (const [k, v] of Object.entries(base.quantities)) {
+  if (localizedBase.quantities) {
+    for (const [k, v] of Object.entries(localizedBase.quantities)) {
       scaledQuantities[k] = scaleIngredientText(v, safeTarget, baseServings);
     }
   }
 
-  const scaledSteps = (base.steps || []).map((st) =>
+  const scaledSteps = (localizedBase.steps || []).map((st) =>
     scaleStepText(st, safeTarget, baseServings)
   );
 
-  const scaledCookTime = calculateScaledTime(base.cookTime, safeTarget, baseServings);
-  const scaledTotalTime = calculateScaledTime(base.totalTime, safeTarget, baseServings);
-  const scaledPrepTime = calculateScaledTime(base.prepTime, safeTarget, baseServings);
+  const scaledCookTime = calculateScaledTime(localizedBase.cookTime, safeTarget, baseServings);
+  const scaledTotalTime = calculateScaledTime(localizedBase.totalTime, safeTarget, baseServings);
+  const scaledPrepTime = calculateScaledTime(localizedBase.prepTime, safeTarget, baseServings);
 
   return {
-    ...base,
+    ...localizedBase,
     servings: safeTarget,
     ingredients: scaledIngredients,
     quantities: scaledQuantities,
@@ -103,6 +106,8 @@ function deriveScaledRecipe(base: Recipe, targetServings: number): Recipe {
     prepTime: scaledPrepTime,
   };
 }
+
+const initialLanguage = getInitialLanguage();
 
 export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
   screen: 'home',
@@ -120,12 +125,12 @@ export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
   isMockMode: true,
   micLevel: 0,
   theme: getInitialTheme(),
-  language: getInitialLanguage(),
+  language: initialLanguage,
   error: null,
   isSettingsOpen: false,
 
   baseRecipe: RECIPE_DATA,
-  recipe: RECIPE_DATA,
+  recipe: deriveScaledRecipe(RECIPE_DATA, RECIPE_DATA.servings || 4, initialLanguage),
   servings: RECIPE_DATA.servings || 4,
   isExtracting: false,
   extractionStatus: '',
@@ -219,13 +224,20 @@ export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
     try {
       localStorage.setItem('sousvoice-language', language);
     } catch {}
-    set({ language });
+    try {
+      setSpeechServiceLanguage(language);
+    } catch {}
+    const { baseRecipe, servings } = get();
+    set({
+      language,
+      recipe: deriveScaledRecipe(baseRecipe, servings, language),
+    });
   },
 
   setServings: (servingsInput) => {
     const validServings = Math.max(0, isNaN(servingsInput) ? 0 : Math.floor(servingsInput));
-    const { baseRecipe } = get();
-    const updatedScaledRecipe = deriveScaledRecipe(baseRecipe, validServings);
+    const { baseRecipe, language } = get();
+    const updatedScaledRecipe = deriveScaledRecipe(baseRecipe, validServings, language);
     set({
       servings: validServings,
       recipe: updatedScaledRecipe,
@@ -245,17 +257,19 @@ export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
 
   setRecipe: (newRecipe) => {
     const defaultServings = newRecipe.servings || 4;
+    const { language } = get();
     set({
       baseRecipe: newRecipe,
       servings: defaultServings,
-      recipe: deriveScaledRecipe(newRecipe, defaultServings),
+      recipe: deriveScaledRecipe(newRecipe, defaultServings, language),
     });
   },
 
   clearRecipeAndSession: (newRecipe) => {
     const raw = newRecipe || RECIPE_DATA;
     const defaultServings = raw.servings || 4;
-    const scaled = deriveScaledRecipe(raw, defaultServings);
+    const { language } = get();
+    const scaled = deriveScaledRecipe(raw, defaultServings, language);
     set({
       baseRecipe: raw,
       recipe: scaled,
@@ -279,7 +293,7 @@ export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
   },
 
   resetSession: () => {
-    const { baseRecipe, servings } = get();
+    const { baseRecipe, servings, language } = get();
     set({
       screen: 'home',
       voiceState: 'idle',
@@ -288,7 +302,7 @@ export const useSousVoiceStore = create<SousVoiceState>((set, get) => ({
       completedSteps: [],
       isMuted: false,
       error: null,
-      recipe: deriveScaledRecipe(baseRecipe, servings),
+      recipe: deriveScaledRecipe(baseRecipe, servings, language),
       stats: {
         turnsCount: 0,
         interruptedCount: 0,
