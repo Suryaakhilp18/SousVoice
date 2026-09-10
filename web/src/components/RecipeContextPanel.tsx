@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
@@ -21,7 +21,7 @@ interface RecipeContextPanelProps {
 }
 
 export const RecipeContextPanel: React.FC<RecipeContextPanelProps> = ({ onSelectStep }) => {
-  const { recipe, currentStep, completedSteps, setCurrentStep, setScreen, servings, setServings, language } = useSousVoiceStore();
+  const { recipe, baseRecipe, currentStep, completedSteps, setCurrentStep, setScreen, servings, setServings, language } = useSousVoiceStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const t = getTranslation(language);
 
@@ -177,7 +177,7 @@ export const RecipeContextPanel: React.FC<RecipeContextPanelProps> = ({ onSelect
                   <ShoppingBag className="w-3.5 h-3.5" />
                   <span>{t.ingredients} ({recipe.ingredients.length})</span>
                 </div>
-                {servings !== 4 && (
+                {servings !== (baseRecipe?.servings || 4) && (
                   <span className="text-[10px] text-kitchen-text-muted lowercase font-normal">
                     (scaled for {servings})
                   </span>

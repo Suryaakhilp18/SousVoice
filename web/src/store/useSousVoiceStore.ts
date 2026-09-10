@@ -1,8 +1,8 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import type { AgentVoiceState, AppError, AppScreen, Recipe, SessionStats, ThemeMode, TranscriptMessage } from '../types';
 import { RECIPE_DATA } from '../data/recipe';
 import type { SupportedLanguage } from '../services/localization';
-import { scaleIngredientText, calculateScaledTime } from '../services/ingredientScaler';
+import { scaleIngredientText, scaleStepText, calculateScaledTime } from '../services/ingredientScaler';
 
 interface SousVoiceState {
   screen: AppScreen;
@@ -77,6 +77,17 @@ function deriveScaledRecipe(base: Recipe, targetServings: number): Recipe {
     scaleIngredientText(ing, safeTarget, baseServings)
   );
 
+  const scaledQuantities: Record<string, string> = {};
+  if (base.quantities) {
+    for (const [k, v] of Object.entries(base.quantities)) {
+      scaledQuantities[k] = scaleIngredientText(v, safeTarget, baseServings);
+    }
+  }
+
+  const scaledSteps = (base.steps || []).map((st) =>
+    scaleStepText(st, safeTarget, baseServings)
+  );
+
   const scaledCookTime = calculateScaledTime(base.cookTime, safeTarget, baseServings);
   const scaledTotalTime = calculateScaledTime(base.totalTime, safeTarget, baseServings);
   const scaledPrepTime = calculateScaledTime(base.prepTime, safeTarget, baseServings);
@@ -85,6 +96,8 @@ function deriveScaledRecipe(base: Recipe, targetServings: number): Recipe {
     ...base,
     servings: safeTarget,
     ingredients: scaledIngredients,
+    quantities: scaledQuantities,
+    steps: scaledSteps,
     cookTime: scaledCookTime,
     totalTime: scaledTotalTime,
     prepTime: scaledPrepTime,

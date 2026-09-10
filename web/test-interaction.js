@@ -217,6 +217,45 @@ async function runInteractionVerification() {
     throw new Error('Extracted recipe has no cooking steps');
   }
 
+  // 11. Test Serving Scaling: Check ingredients, quantities dict, and step instructions update
+  console.log('[Step 13] Testing Serving Scaling Dynamics...');
+  const { setServings } = useSousVoiceStore.getState();
+  // Double servings from 4 to 8
+  setServings(8);
+  const scaledRecipe8 = useSousVoiceStore.getState().recipe;
+  console.log(`[Step 13] Scaled servings: ${scaledRecipe8.servings} (Expected: 8)`);
+  if (scaledRecipe8.servings !== 8) throw new Error('Servings not updated to 8');
+  
+  // Chicken was 500g in base (4 servings), at 8 it should be 1000g or 1kg
+  const chickenIng = scaledRecipe8.ingredients.find((i) => i.toLowerCase().includes('chicken'));
+  console.log(`[Step 13] Scaled chicken ingredient: "${chickenIng}"`);
+  if (!chickenIng || (!chickenIng.includes('1000g') && !chickenIng.includes('1kg'))) {
+    throw new Error('Chicken ingredient quantity was not scaled properly for 8 servings');
+  }
+
+  // Check quantities dictionary was scaled
+  const chickenQty = scaledRecipe8.quantities?.chicken;
+  console.log(`[Step 13] Scaled chicken quantity in dict: "${chickenQty}"`);
+  if (!chickenQty || (!chickenQty.includes('1000g') && !chickenQty.includes('1kg'))) {
+    throw new Error('recipe.quantities dictionary was not scaled for 8 servings');
+  }
+
+  // Compound ingredients: "1 tsp red chili powder & 1/2 tsp turmeric" scaled by 2 => "2 tsp red chili powder & 1 tsp turmeric"
+  const spiceIng = scaledRecipe8.ingredients.find((i) => i.includes('red chili powder'));
+  console.log(`[Step 13] Scaled compound spice: "${spiceIng}"`);
+  if (!spiceIng || !spiceIng.includes('2 tsp red chili powder') || !spiceIng.includes('1 tsp turmeric')) {
+    throw new Error('Compound ingredient with & was not scaled properly');
+  }
+
+  // Scale down to 2 servings (half of 4)
+  setServings(2);
+  const scaledRecipe2 = useSousVoiceStore.getState().recipe;
+  const chickenQty2 = scaledRecipe2.quantities?.chicken;
+  console.log(`[Step 13] Scaled chicken for 2 servings: "${chickenQty2}"`);
+  if (!chickenQty2 || !chickenQty2.includes('250g')) {
+    throw new Error('recipe.quantities not scaled down properly for 2 servings');
+  }
+
   console.log('--- ALL MULTI-RECIPE, CONTEXTUAL AI, STEP PROGRESSION, BARGE-IN & FIFO QUEUE CHECKS PASSED (100% VERIFIED) ---');
 }
 

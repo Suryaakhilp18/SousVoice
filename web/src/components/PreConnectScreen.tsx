@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useSousVoiceStore } from '../store/useSousVoiceStore';
-import { Clock, Mic, Minus, Play, Plus, Users, Utensils, Zap } from 'lucide-react';
+import { Clock, Mic, Minus, Play, Plus, ShoppingBag, Users, Utensils, Zap } from 'lucide-react';
 import { getTranslation } from '../services/localization';
 
 interface PreConnectScreenProps {
@@ -9,7 +9,7 @@ interface PreConnectScreenProps {
 }
 
 export const PreConnectScreen: React.FC<PreConnectScreenProps> = ({ onStart }) => {
-  const { recipe, setScreen, servings, setServings, language } = useSousVoiceStore();
+  const { recipe, baseRecipe, setScreen, servings, setServings, language } = useSousVoiceStore();
   const t = getTranslation(language);
 
   const handleServingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,6 +80,33 @@ export const PreConnectScreen: React.FC<PreConnectScreenProps> = ({ onStart }) =
           </span>
           <span>•</span>
           <span>{recipe.steps.length} {t.steps}</span>
+        </div>
+
+        {/* Live Scaled Ingredients Preview */}
+        <div className="bg-kitchen-elevated border border-kitchen-border rounded-2xl p-3.5 sm:p-4 text-left mb-4">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-kitchen-amber mb-2">
+            <div className="flex items-center gap-1.5">
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>{t.ingredients} ({recipe.ingredients.length})</span>
+            </div>
+            <span className="text-[10px] text-kitchen-text-muted lowercase font-normal">
+              {servings !== (baseRecipe?.servings || 4)
+                ? `scaled for ${servings} ${t.servings.toLowerCase()}`
+                : `base ${servings} ${t.servings.toLowerCase()}`}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1">
+            {recipe.ingredients.map((ing, idx) => (
+              <div
+                key={idx}
+                className="px-2.5 py-1 bg-kitchen-surface border border-kitchen-border/70 rounded-lg text-xs text-kitchen-text-primary flex items-start gap-1.5"
+              >
+                <span className="text-kitchen-amber font-bold">•</span>
+                <span className="truncate">{ing}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* What You Can Say */}
